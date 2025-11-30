@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HUM TV TELE-FILMS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #000;
+            color: white;
+            padding-top: 200px; /* Make space for fixed player */
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .player-container {
+            background-color: #000;
+            border-radius: 0 0 12px 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
+            margin-bottom: 40px;
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 355px;
+            height: 180px;
+            cursor: pointer;
+            z-index: 1000;
+        } 
+
+        #player {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Neon Loader Styles */
+        .neon-loader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 10;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        .neon-loader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader-content {
+            text-align: center;
+        }
+
+        .loader-ring {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            position: relative;
+            margin: 0 auto 10px;
+        }
+
+        .loader-ring:before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            left: 5px;
+            background: linear-gradient(0deg, #ff00cc 0%, #333399 100%);
+            animation: spin 1.5s linear infinite;
+            box-shadow: 0 0 10px #ff00cc, 0 0 20px #ff00cc, 0 0 30px #ff00cc;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loader-text {
+            font-size: 0.8rem;
+            color: #fff;
+            text-shadow: 0 0 5px #ff00cc, 0 0 10px #ff00cc;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .player-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .player-container.show-controls .player-overlay {
+            opacity: 1;
+            
+        }
+
+        .player-top-controls {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px 19px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            
+            /* Default size */
+            height: 25px;
+            min-height: 55px;
+            max-height: 50px;
+        }
+
+        .player-container.show-controls .player-top-controls {
+            opacity: 1;
+        }
+
+        /* Top Player Control Container Size Options */
+        .player-top-controls.size-small {
+            height: 25px;
+            padding: 3px 15px;
+        }
+
+        .player-top-controls.size-medium {
+            height: 35px;
+            padding: 5px 19px;
+        }
+
+        .player-top-controls.size-large {
+            height: 45px;
+            padding: 8px 22px;
+        }
+
+        /* Adjust font sizes for different control sizes */
+        .player-top-controls.size-small .dropdown-btn,
+        .player-top-controls.size-small .control-btn,
+        .player-top-controls.size-small .time-display {
+            font-size: 0.65rem;
+        }
+
+        .player-top-controls.size-medium .dropdown-btn,
+        .player-top-controls.size-medium .control-btn,
+        .player-top-controls.size-medium .time-display {
+            font-size: 0.7rem;
+        }
+
+        .player-top-controls.size-large .dropdown-btn,
+        .player-top-controls.size-large .control-btn,
+        .player-top-controls.size-large .time-display {
+            font-size: 0.8rem;
+        }
+
+        /* Adjust dropdown content for different sizes */
+        .player-top-controls.size-small .dropdown-content {
+            min-width: 90px;
+            top: 25px;
+        }
+
+        .player-top-controls.size-small .dropdown-content button {
+            padding: 6px 10px;
+            font-size: 0.65rem;
+        }
+
+        .player-top-controls.size-medium .dropdown-content {
+            min-width: 100px;
+            top: 35px;
+        }
+
+        .player-top-controls.size-large .dropdown-content {
+            min-width: 110px;
+            top: 45px;
+        }
+
+        /* Adjust control buttons for different sizes */
+        .player-top-controls.size-small .control-btn {
+            padding: 2px;
+            width: 20px;
+            height: 20px;
+        }
+
+        .player-top-controls.size-medium .control-btn {
+            padding: 3px;
+            width: 24px;
+            height: 24px;
+        }
+
+        .player-top-controls.size-large .control-btn {
+            padding: 4px;
+            width: 28px;
+            height: 28px;
+        }
+
+        /* Width variants for top controls */
+        .player-top-controls.width-compact {
+            width: 90%;
+            left: 5%;
+            right: 5%;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .player-top-controls.width-full {
+            width: 100%;
+            left: 0;
+            right: 0;
+        }
+
+        .player-top-controls.width-custom {
+            width: 80%;
+            left: 10%;
+            right: 10%;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .top-controls-left, .top-controls-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 3px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: scale(1.1);
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-btn {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .dropdown-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.9);
+            min-width: 100px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5);
+            z-index: 1;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .dropdown-content button {
+            color: white;
+            padding: 8px 12px;
+            text-decoration: none;
+            display: block;
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+
+        .dropdown-content button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        #progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff416c, #ff4b2b);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.1s;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .left-controls, .right-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .time-display {
+            font-size: 0.7rem;
+            color: #ddd;
+            font-weight: 500;
+        }
+
+        .volume-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #volume-slider {
+            width: 60px;
+            height: 3px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        #volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff416c;
+            cursor: pointer;
+        }
+
+        /* Video Selection Section */
+        .video-selection {
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .video-selection h2 {
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 65, 108, 0.7);
+        }
+
+        .video-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .video-btn {
+            position: relative;
+            width: 200px;
+            height: 120px;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .video-btn:hover {
+            transform: translateY(-10px) rotateX(5deg);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.7);
+        }
+
+        .video-btn.active {
+            transform: translateY(-5px);
+            box-shadow: 0 0 20px rgba(255, 65, 108, 0.8);
+        }
+
+        .video-btn img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .video-btn:hover img {
+            transform: scale(1.1);
+        }
+
+        .video-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.7));
+            z-index: 1;
+        }
+
+        .video-title {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            font-size: 1;
+            z-index: 2;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Copyright section styles */
+        .copyright-section {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .copyright-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .copyright-year {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        /* Keyboard shortcuts hint */
+        .keyboard-hint {
+            position: absolute;
+            bottom: 80px;
+            right: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px;
+            border-radius: 5px;
+            font-size: 0.6rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .player-container.show-controls .keyboard-hint {
+            opacity: 0.7;
+        }
+
+        /* Responsive adjustments for top controls */
+        @media (max-width: 768px) {
+            .player-container {
+                width: 100%;
+                height: 200px;
+                left: 0;
+                transform: none;
+            }
+            
+            body {
+                padding-top: 200px;
+            }
+            
+            .controls {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+            
+            .left-controls, .right-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .player-top-controls {
+                padding: 5px 10px;
+                height: 30px;
+            }
+            
+            .player-top-controls.size-small {
+                height: 22px;
+                padding: 2px 8px;
+            }
+            
+            .player-top-controls.size-large {
+                height: 38px;
+                padding: 6px 12px;
+            }
+            
+            .player-top-controls.width-compact,
+            .player-top-controls.width-custom {
+                width: 100%;
+                left: 0;
+                right: 0;
+                border-radius: 0;
+            }
+            
+            .top-controls-left, .top-controls-right {
+                gap: 5px;
+            }
+            
+            .video-buttons {
+                gap: 15px;
+            }
+            
+            .video-btn {
+                width: 150px;
+                height: 90px;
+            }
+            
+            .copyright-footer {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .keyboard-hint {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Player container -->
+        <div class="player-container">
+            <!-- Neon Loader -->
+            <div class="neon-loader" id="neon-loader">
+                <div class="loader-content">
+                    <div class="loader-ring"></div>
+                    <div class="loader-text">LOADING...</div>
+                </div>
+            </div>
+            
+            <div id="player"></div>
+            
+            <!-- Keyboard shortcuts hint -->
+            <div class="keyboard-hint">
+                <div>Space: Play/Pause</div>
+                <div>F: Fullscreen</div>
+                <div>M: Mute</div>
+                <div>← →: Seek</div>
+                <div>↑ ↓: Volume</div>
+            </div>
+            
+            <!-- New top controls -->
+            <div class="player-top-controls size-medium width-full">
+                <div class="top-controls-left">
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <span id="current-speed">1x</span> ▾
+                        </button>
+                        <div class="dropdown-content">
+                            <button data-speed="0.25">0.25x</button>
+                            <button data-speed="0.5">0.5x</button>
+                            <button data-speed="0.75">0.75x</button>
+                            <button data-speed="1" class="active">Normal</button>
+                            <button data-speed="1.25">1.25x</button>
+                            <button data-speed="1.5">1.5x</button>
+                            <button data-speed="1.75">1.75x</button>
+                            <button data-speed="2">2x</button>
+                        </div>
+                    </div>
+                    
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <span id="current-quality">Auto</span> ▾
+                        </button>
+                        <div class="dropdown-content" id="quality-dropdown">
+                            <button data-quality="default">Auto</button>
+                            <button data-quality="hd1080">1080p</button>
+                            <button data-quality="hd720">720p</button>
+                            <button data-quality="large">480p</button>
+                            <button data-quality="medium">360p</button>
+                            <button data-quality="small">240p</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="top-controls-right">
+                   </div>
+            </div> 
+                    
+            <!-- Bottom controls -->
+            <div class="player-overlay">
+                <div class="progress-container">
+                    <div id="progress-bar"></div>
+                </div>
+                <div class="controls">
+                    <div class="left-controls">
+                        <button id="play-pause" class="control-btn">
+                            <i>▶</i>
+                        </button>
+                        <div class="time-display">
+                            <span id="current-time">0:00</span> / <span id="duration">0:00</span>
+                        </div>
+                    </div>
+                    <div class="right-controls">
+                        <div class="volume-container">
+                            <button id="mute-unmute" class="control-btn">
+                                <i>🔊</i>
+                            </button>
+                            <input type="range" id="volume-slider" min="0" max="100" value="50">
+                        </div>
+                        <button id="fullscreen-btn" class="control-btn">
+                            <i>⛶</i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+            <div class="video-buttons">
+                
+                    
+   <div class="video-btn" data-video-id="0TbObX0dyQQ">
+    <img src="https://i.ytimg.com/vi/0TbObX0dyQQ/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 01 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="04lNPPVdISI">
+    <img src="https://i.ytimg.com/vi/04lNPPVdISI/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 02 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="-7TIA5qsDkc">
+    <img src="https://i.ytimg.com/vi/-7TIA5qsDkc/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 03 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="eBXOcOSlPjM">
+    <img src="https://i.ytimg.com/vi/eBXOcOSlPjM/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 04 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="AP5ijvyyVqQ">
+    <img src="https://i.ytimg.com/vi/AP5ijvyyVqQ/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 05 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="hbfryDZ8Sw4">
+    <img src="https://i.ytimg.com/vi/hbfryDZ8Sw4/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 06 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="_VCSxGO295E">
+    <img src="https://i.ytimg.com/vi/_VCSxGO295E/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 07 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="U9ALGrR7lPE">
+    <img src="https://i.ytimg.com/vi/U9ALGrR7lPE/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 08 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="co7zSpcwOHI">
+    <img src="https://i.ytimg.com/vi/co7zSpcwOHI/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 09 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="tok1t8HCp0k">
+    <img src="https://i.ytimg.com/vi/tok1t8HCp0k/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 10 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="KR-SzlsBsKQ">
+    <img src="https://i.ytimg.com/vi/KR-SzlsBsKQ/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 11 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="i5fGAU-Uiqk">
+    <img src="https://i.ytimg.com/vi/i5fGAU-Uiqk/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 12 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="ZhNaMJ5Iecs">
+    <img src="https://i.ytimg.com/vi/ZhNaMJ5Iecs/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 13 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="H4CSfdlaSoE">
+    <img src="https://i.ytimg.com/vi/H4CSfdlaSoE/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 14 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="2Pib3S53yI0">
+    <img src="https://i.ytimg.com/vi/2Pib3S53yI0/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 15 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="n5wvOzmnQi4">
+    <img src="https://i.ytimg.com/vi/n5wvOzmnQi4/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 16 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="egagiqw_K8g">
+    <img src="https://i.ytimg.com/vi/egagiqw_K8g/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 17 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="zHP_Stby23g">
+    <img src="https://i.ytimg.com/vi/zHP_Stby23g/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 18 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="6DOZhCfwZxo">
+    <img src="https://i.ytimg.com/vi/6DOZhCfwZxo/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 19 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="octKqMbyZTE">
+    <img src="https://i.ytimg.com/vi/octKqMbyZTE/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 20 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="UWPf8-hEXTA">
+    <img src="https://i.ytimg.com/vi/UWPf8-hEXTA/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 21 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="Nsl5-g5yg7k">
+    <img src="https://i.ytimg.com/vi/Nsl5-g5yg7k/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 22 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="hu4flosH37I">
+    <img src="https://i.ytimg.com/vi/hu4flosH37I/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 23 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="lpIGuzyyEK0">
+    <img src="https://i.ytimg.com/vi/lpIGuzyyEK0/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 24 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="by0dO7sP8dk">
+    <img src="https://i.ytimg.com/vi/by0dO7sP8dk/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 25 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="VR_-7uwu1gc">
+    <img src="https://i.ytimg.com/vi/VR_-7uwu1gc/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 26 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="nBlXxGS9hIY">
+    <img src="https://i.ytimg.com/vi/nBlXxGS9hIY/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 27 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="rXRbPuUYLT0">
+    <img src="https://i.ytimg.com/vi/rXRbPuUYLT0/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 28 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="jdv9792HIdI">
+    <img src="https://i.ytimg.com/vi/jdv9792HIdI/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 29 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="MnhKHB3yYoA">
+    <img src="https://i.ytimg.com/vi/MnhKHB3yYoA/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 30 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="tX2VI72s02E">
+    <img src="https://i.ytimg.com/vi/tX2VI72s02E/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 31 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="R1hija2iagg">
+    <img src="https://i.ytimg.com/vi/R1hija2iagg/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 32 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="jLzdGcLglow">
+    <img src="https://i.ytimg.com/vi/jLzdGcLglow/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 33 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="wruQfUTcePU">
+    <img src="https://i.ytimg.com/vi/wruQfUTcePU/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 34 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="EHf0B0F0JgI">
+    <img src="https://i.ytimg.com/vi/EHf0B0F0JgI/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 35 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="Kx_mrcVrWes">
+    <img src="https://i.ytimg.com/vi/Kx_mrcVrWes/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 36 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="YO-IWG81sag">
+    <img src="https://i.ytimg.com/vi/YO-IWG81sag/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 37 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="tP_F3tSFhj0">
+    <img src="https://i.ytimg.com/vi/tP_F3tSFhj0/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 38 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="AJwr7IZBPvU">
+    <img src="https://i.ytimg.com/vi/AJwr7IZBPvU/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 39 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="F4Tl1NIqScU">
+    <img src="https://i.ytimg.com/vi/F4Tl1NIqScU/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 40 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="fIkwuNfrlIM">
+    <img src="https://i.ytimg.com/vi/fIkwuNfrlIM/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 41 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="ZIwp1hLeFQ4">
+    <img src="https://i.ytimg.com/vi/ZIwp1hLeFQ4/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 42 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="k-CGAMR6Fow">
+    <img src="https://i.ytimg.com/vi/k-CGAMR6Fow/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 43 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="L8V6eNo1SOQ">
+    <img src="https://i.ytimg.com/vi/L8V6eNo1SOQ/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 44 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="EXwvVZqJOy4">
+    <img src="https://i.ytimg.com/vi/EXwvVZqJOy4/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 45 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="2NKLTsxIoBk">
+    <img src="https://i.ytimg.com/vi/2NKLTsxIoBk/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 46 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="2ibCVi4-JTc">
+    <img src="https://i.ytimg.com/vi/2ibCVi4-JTc/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 47 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="XhPnVzm4hcU">
+    <img src="https://i.ytimg.com/vi/XhPnVzm4hcU/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 48 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="hYZ1K9fqxZw">
+    <img src="https://i.ytimg.com/vi/hYZ1K9fqxZw/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 49 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="2a5aJ0UzkpQ">
+    <img src="https://i.ytimg.com/vi/2a5aJ0UzkpQ/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 50 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="SOsj8eGlyeA">
+    <img src="https://i.ytimg.com/vi/SOsj8eGlyeA/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 51 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="YTcb-sBL_yA">
+    <img src="https://i.ytimg.com/vi/YTcb-sBL_yA/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 52 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="TBuLhxJUwfo">
+    <img src="https://i.ytimg.com/vi/TBuLhxJUwfo/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 53 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="5I98Sfpn8AE">
+    <img src="https://i.ytimg.com/vi/5I98Sfpn8AE/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 54 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="WOoMwlQqVR4">
+    <img src="https://i.ytimg.com/vi/WOoMwlQqVR4/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 55 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="l0J5AHqE2IQ">
+    <img src="https://i.ytimg.com/vi/l0J5AHqE2IQ/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 56 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="5vwLZjcGYq4">
+    <img src="https://i.ytimg.com/vi/5vwLZjcGYq4/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 57 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="p51z_WImwzE">
+    <img src="https://i.ytimg.com/vi/p51z_WImwzE/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 58 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="T3y2OjFx3bk">
+    <img src="https://i.ytimg.com/vi/T3y2OjFx3bk/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 59 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="xO-iMrTznmw">
+    <img src="https://i.ytimg.com/vi/xO-iMrTznmw/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 60 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="cYCd2gDJObY">
+    <img src="https://i.ytimg.com/vi/cYCd2gDJObY/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 61 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="t7hvVMo1hOg">
+    <img src="https://i.ytimg.com/vi/t7hvVMo1hOg/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 62 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="Js_vwWmdh24">
+    <img src="https://i.ytimg.com/vi/Js_vwWmdh24/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 63 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="_3c6mRaeTE4">
+    <img src="https://i.ytimg.com/vi/_3c6mRaeTE4/hqdefault.jpg">
+    <div class="video-title">Jaan Nisar Ep 64 - [Eng Sub]</div>
+</div>
+<div class="video-btn" data-video-id="gYVborPPkS4">
+    <img src="https://i.ytimg.com/vi/gYVborPPkS4/hqdefault.jpg">
+    <div class="video-title">Last Episode </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+         
+            </div>
+        </div>
+        
+        <!-- Copyright section -->
+        <div class="copyright-section">
+            <div class="copyright-footer">
+                <span class="copyright-year">Powerd By: 🩷~𝑺𝒚𝒆𝒅 𝑴𝒖𝒛𝒂𝒎𝒎𝒊𝒍 𝑺𝒉𝒂𝒉~🩷</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Your existing JavaScript code remains the same...
+        // YouTube API setup
+        let player;
+        let isPlaying = false;
+        let isMuted = false;
+        let currentVolume = 50;
+        let isFullscreen = false;
+        let isTheaterMode = false;
+        let currentPlaybackRate = 1;
+        let currentVideoId = '0TbObX0dyQQ'; // Default video
+        let currentQuality = 'default';
+        let currentTime = 0;
+        let controlsTimeout;
+        let controlsVisible = false;
+
+        // Load YouTube IFrame API
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        // Initialize player when API is ready
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: currentVideoId,
+                playerVars: {
+                    'playsinline': 1,
+                    'controls': 0,
+                    'rel': 0,
+                    'modestbranding': 1,
+                    'autoplay': 1 // Enable autoplay
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        // When player is ready
+        function onPlayerReady(event) {
+            updateTimeDisplay();
+            setInterval(updateProgressBar, 500);
+            document.getElementById('volume-slider').value = currentVolume;
+            
+            // Get available quality levels
+            getAvailableQualities();
+            
+            // Hide loader when video is ready
+            setTimeout(() => {
+                document.getElementById('neon-loader').classList.add('hidden');
+            }, 1000);
+            
+            // Start autoplay
+            player.playVideo();
+            
+            // Hide controls after 3 seconds
+            hideControls();
+        }
+
+        // Handle player state changes
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.PLAYING) {
+                isPlaying = true;
+                document.getElementById('play-pause').innerHTML = '<i>⏸</i>';
+            } else {
+                isPlaying = false;
+                document.getElementById('play-pause').innerHTML = '<i>▶</i>';
+            }
+            
+            // Save current time when video is paused or ended
+            if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+                currentTime = player.getCurrentTime();
+            }
+        }
+
+        // Update progress bar
+        function updateProgressBar() {
+            if (player && player.getDuration) {
+                const currentTime = player.getCurrentTime();
+                const duration = player.getDuration();
+                const progress = (currentTime / duration) * 100;
+                
+                document.getElementById('progress-bar').style.width = `${progress}%`;
+                updateTimeDisplay();
+            }
+        }
+
+        // Update time display
+        function updateTimeDisplay() {
+            if (player && player.getDuration) {
+                const currentTime = player.getCurrentTime();
+                const duration = player.getDuration();
+                
+                document.getElementById('current-time').textContent = formatTime(currentTime);
+                document.getElementById('duration').textContent = formatTime(duration);
+            }
+        }
+
+        // Format time in MM:SS
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        // Play/Pause button
+        document.getElementById('play-pause').addEventListener('click', function() {
+            if (isPlaying) {
+                player.pauseVideo();
+            } else {
+                player.playVideo();
+            }
+            showControlsTemporarily();
+        });
+
+        // Mute/Unmute button
+        document.getElementById('mute-unmute').addEventListener('click', function() {
+            if (isMuted) {
+                player.unMute();
+                document.getElementById('mute-unmute').innerHTML = '<i>🔊</i>';
+                isMuted = false;
+            } else {
+                player.mute();
+                document.getElementById('mute-unmute').innerHTML = '<i>🔇</i>';
+                isMuted = true;
+            }
+            showControlsTemporarily();
+        });
+
+        // Volume slider
+        document.getElementById('volume-slider').addEventListener('input', function() {
+            currentVolume = this.value;
+            player.setVolume(currentVolume);
+            
+            if (currentVolume == 0) {
+                document.getElementById('mute-unmute').innerHTML = '<i>🔇</i>';
+                isMuted = true;
+            } else {
+                document.getElementById('mute-unmute').innerHTML = '<i>🔊</i>';
+                isMuted = false;
+            }
+            showControlsTemporarily();
+        });
+
+        // Progress bar click to seek
+        document.querySelector('.progress-container').addEventListener('click', function(e) {
+            const rect = this.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            const duration = player.getDuration();
+            const newTime = percent * duration;
+            
+            player.seekTo(newTime, true);
+            showControlsTemporarily();
+        });
+
+        // Fullscreen functionality
+        document.getElementById('fullscreen-btn').addEventListener('click', function() {
+            const playerContainer = document.querySelector('.player-container');
+            
+            if (!isFullscreen) {
+                if (playerContainer.requestFullscreen) {
+                    playerContainer.requestFullscreen();
+                } else if (playerContainer.webkitRequestFullscreen) {
+                    playerContainer.webkitRequestFullscreen();
+                } else if (playerContainer.msRequestFullscreen) {
+                    playerContainer.msRequestFullscreen();
+                }
+                
+                // Rotate to landscape on mobile
+                if (window.screen.orientation && window.screen.orientation.lock) {
+                    window.screen.orientation.lock('landscape').catch(function(error) {
+                        console.log('Orientation lock failed: ', error);
+                    });
+                }
+                
+                isFullscreen = true;
+                document.getElementById('fullscreen-btn').innerHTML = '<i>⛶</i>';
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+                
+                // Rotate back to portrait on mobile
+                if (window.screen.orientation && window.screen.orientation.unlock) {
+                    window.screen.orientation.unlock();
+                }
+                
+                isFullscreen = false;
+                document.getElementById('fullscreen-btn').innerHTML = '<i>⛶</i>';
+            }
+            showControlsTemporarily();
+        });
+
+        // Listen for fullscreen change events
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('msfullscreenchange', handleFullscreenChange);
+
+        function handleFullscreenChange() {
+            isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+        }
+
+        // Playback speed controls
+        document.querySelectorAll('.dropdown-content button[data-speed]').forEach(button => {
+            button.addEventListener('click', function() {
+                const speed = parseFloat(this.getAttribute('data-speed'));
+                player.setPlaybackRate(speed);
+                currentPlaybackRate = speed;
+                document.getElementById('current-speed').textContent = speed + 'x';
+                
+                // Update active state
+                document.querySelectorAll('.dropdown-content button[data-speed]').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+                showControlsTemporarily();
+            });
+        });
+
+        // Quality controls
+        document.querySelectorAll('#quality-dropdown button[data-quality]').forEach(button => {
+            button.addEventListener('click', function() {
+                const quality = this.getAttribute('data-quality');
+                changeQuality(quality);
+                showControlsTemporarily();
+            });
+        });
+
+        // Video selection buttons
+        document.querySelectorAll('.video-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const videoId = this.getAttribute('data-video-id');
+                changeVideo(videoId);
+                
+                // Update active state
+                document.querySelectorAll('.video-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+
+        // Function to change video
+        function changeVideo(videoId) {
+            // Show loader when changing video
+            document.getElementById('neon-loader').classList.remove('hidden');
+            
+            // Save current time before changing video
+            currentTime = 0;
+            currentVideoId = videoId;
+            
+            // Load new video
+            player.loadVideoById(videoId);
+            
+            // Hide loader when video is ready
+            setTimeout(() => {
+                document.getElementById('neon-loader').classList.add('hidden');
+            }, 1500);
+        }
+
+        // Function to change video quality
+        function changeQuality(quality) {
+            // Show loader when changing quality
+            document.getElementById('neon-loader').classList.remove('hidden');
+            
+            // Save current time before reloading
+            currentTime = player.getCurrentTime();
+            currentQuality = quality;
+            
+            // Update UI
+            document.getElementById('current-quality').textContent = 
+                quality === 'default' ? 'Auto' : 
+                quality === 'hd1080' ? '1080p' :
+                quality === 'hd720' ? '720p' :
+                quality === 'large' ? '480p' :
+                quality === 'medium' ? '360p' : '240p';
+            
+            // Update active state
+            document.querySelectorAll('#quality-dropdown button[data-quality]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`#quality-dropdown button[data-quality="${quality}"]`).classList.add('active');
+            
+            // Reload player with new quality
+            reloadPlayerWithQuality(quality);
+        }
+
+        // Function to reload player with specific quality
+        function reloadPlayerWithQuality(quality) {
+            // Store current state
+            const wasPlaying = isPlaying;
+            
+            // Destroy current player
+            player.destroy();
+            
+            // Create new player with quality parameter
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: currentVideoId,
+                playerVars: {
+                    'playsinline': 1,
+                    'controls': 0,
+                    'rel': 0,
+                    'modestbranding': 1,
+                    'vq': quality === 'default' ? undefined : quality,
+                    'autoplay': 1 // Enable autoplay
+                },
+                events: {
+                    'onReady': function(event) {
+                        onPlayerReady(event);
+                        
+                        // Restore previous state
+                        player.setVolume(currentVolume);
+                        player.setPlaybackRate(currentPlaybackRate);
+                        
+                        if (wasPlaying) {
+                            player.playVideo();
+                        }
+                        
+                        // Seek to saved time
+                        player.seekTo(currentTime, true);
+                        
+                        // Hide loader
+                        setTimeout(() => {
+                            document.getElementById('neon-loader').classList.add('hidden');
+                        }, 1000);
+                    },
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        // Function to get available qualities (for future enhancement)
+        function getAvailableQualities() {
+            // Note: The YouTube API doesn't provide a direct way to get available qualities
+            // This is a limitation of the IFrame API
+            console.log("Available qualities cannot be directly retrieved via the YouTube API");
+        }
+
+        // Auto-hide controls functionality
+        function hideControls() {
+            const playerContainer = document.querySelector('.player-container');
+            playerContainer.classList.remove('show-controls');
+            controlsVisible = false;
+        }
+
+        function showControls() {
+            const playerContainer = document.querySelector('.player-container');
+            playerContainer.classList.add('show-controls');
+            controlsVisible = true;
+        }
+
+        function toggleControls() {
+            if (controlsVisible) {
+                hideControls();
+            } else {
+                showControls();
+                // Auto-hide after 3 seconds
+                clearTimeout(controlsTimeout);
+                controlsTimeout = setTimeout(hideControls, 3000);
+            }
+        }
+
+        function showControlsTemporarily() {
+            showControls();
+            
+            // Clear existing timeout
+            clearTimeout(controlsTimeout);
+            
+            // Set new timeout to hide controls after 3 seconds
+            controlsTimeout = setTimeout(hideControls, 3000);
+        }
+
+        // Show controls on mouse move
+        document.querySelector('.player-container').addEventListener('mousemove', function() {
+            showControlsTemporarily();
+        });
+
+        // Toggle controls on click
+        document.querySelector('.player-container').addEventListener('click', function(e) {
+            // Don't toggle if clicking on controls directly
+            if (e.target.closest('.player-overlay') || e.target.closest('.player-top-controls')) {
+                return;
+            }
+            toggleControls();
+        });
+
+        // Keep controls visible when hovering over them
+        document.querySelector('.player-overlay').addEventListener('mouseenter', function() {
+            clearTimeout(controlsTimeout);
+        });
+
+        document.querySelector('.player-top-controls').addEventListener('mouseenter', function() {
+            clearTimeout(controlsTimeout);
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', function(e) {
+            // Only handle keys when player is focused or document has focus
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return; // Don't interfere with form inputs
+            }
+            
+            switch(e.key) {
+                case ' ':
+                case 'Spacebar':
+                    e.preventDefault();
+                    if (isPlaying) {
+                        player.pauseVideo();
+                    } else {
+                        player.playVideo();
+                    }
+                    showControlsTemporarily();
+                    break;
+                    
+                case 'f':
+                case 'F':
+                    e.preventDefault();
+                    const playerContainer = document.querySelector('.player-container');
+                    if (!isFullscreen) {
+                        if (playerContainer.requestFullscreen) {
+                            playerContainer.requestFullscreen();
+                        } else if (playerContainer.webkitRequestFullscreen) {
+                            playerContainer.webkitRequestFullscreen();
+                        } else if (playerContainer.msRequestFullscreen) {
+                            playerContainer.msRequestFullscreen();
+                        }
+                        isFullscreen = true;
+                    } else {
+                        if (document.exitFullscreen) {
+                            document.exitFullscreen();
+                        } else if (document.webkitExitFullscreen) {
+                            document.webkitExitFullscreen();
+                        } else if (document.msExitFullscreen) {
+                            document.msExitFullscreen();
+                        }
+                        isFullscreen = false;
+                    }
+                    showControlsTemporarily();
+                    break;
+                    
+                case 'm':
+                case 'M':
+                    e.preventDefault();
+                    if (isMuted) {
+                        player.unMute();
+                        document.getElementById('mute-unmute').innerHTML = '<i>🔊</i>';
+                        isMuted = false;
+                    } else {
+                        player.mute();
+                        document.getElementById('mute-unmute').innerHTML = '<i>🔇</i>';
+                        isMuted = true;
+                    }
+                    showControlsTemporarily();
+                    break;
+                    
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    const currentTime = player.getCurrentTime();
+                    player.seekTo(currentTime - 10, true);
+                    showControlsTemporarily();
+                    break;
+                    
+                case 'ArrowRight':
+                    e.preventDefault();
+                    const currentTime2 = player.getCurrentTime();
+                    player.seekTo(currentTime2 + 10, true);
+                    showControlsTemporarily();
+                    break;
+                    
+                case 'ArrowUp':
+                    e.preventDefault();
+                    if (currentVolume < 100) {
+                        currentVolume = Math.min(100, currentVolume + 10);
+                        document.getElementById('volume-slider').value = currentVolume;
+                        player.setVolume(currentVolume);
+                        if (isMuted && currentVolume > 0) {
+                            player.unMute();
+                            document.getElementById('mute-unmute').innerHTML = '<i>🔊</i>';
+                            isMuted = false;
+                        }
+                    }
+                    showControlsTemporarily();
+                    break;
+                    
+                case 'ArrowDown':
+                    e.preventDefault();
+                    if (currentVolume > 0) {
+                        currentVolume = Math.max(0, currentVolume - 10);
+                        document.getElementById('volume-slider').value = currentVolume;
+                        player.setVolume(currentVolume);
+                        if (currentVolume === 0) {
+                            player.mute();
+                            document.getElementById('mute-unmute').innerHTML = '<i>🔇</i>';
+                            isMuted = true;
+                        }
+                    }
+                    showControlsTemporarily();
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
