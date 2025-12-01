@@ -1,0 +1,2088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HUM TV TELE-FILMS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #000;
+            color: white;
+            padding-top: 200px; /* Make space for fixed player */
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .player-container {
+            background-color: #000;
+            border-radius: 0 0 12px 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
+            margin-bottom: 40px;
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 355px;
+            height: 180px;
+            cursor: pointer;
+            z-index: 1000;
+        } 
+
+        #player {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Neon Loader Styles */
+        .neon-loader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 10;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        .neon-loader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader-content {
+            text-align: center;
+        }
+
+        .loader-ring {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            position: relative;
+            margin: 0 auto 10px;
+        }
+
+        .loader-ring:before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            left: 5px;
+            background: linear-gradient(0deg, #ff00cc 0%, #333399 100%);
+            animation: spin 1.5s linear infinite;
+            box-shadow: 0 0 10px #ff00cc, 0 0 20px #ff00cc, 0 0 30px #ff00cc;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loader-text {
+            font-size: 0.8rem;
+            color: #fff;
+            text-shadow: 0 0 5px #ff00cc, 0 0 10px #ff00cc;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .player-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .player-container.show-controls .player-overlay {
+            opacity: 1;
+            
+        }
+
+        .player-top-controls {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px 19px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            
+            /* Default size */
+            height: 25px;
+            min-height: 55px;
+            max-height: 50px;
+        }
+
+        .player-container.show-controls .player-top-controls {
+            opacity: 1;
+        }
+
+        /* Top Player Control Container Size Options */
+        .player-top-controls.size-small {
+            height: 25px;
+            padding: 3px 15px;
+        }
+
+        .player-top-controls.size-medium {
+            height: 35px;
+            padding: 5px 19px;
+        }
+
+        .player-top-controls.size-large {
+            height: 45px;
+            padding: 8px 22px;
+        }
+
+        /* Adjust font sizes for different control sizes */
+        .player-top-controls.size-small .dropdown-btn,
+        .player-top-controls.size-small .control-btn,
+        .player-top-controls.size-small .time-display {
+            font-size: 0.65rem;
+        }
+
+        .player-top-controls.size-medium .dropdown-btn,
+        .player-top-controls.size-medium .control-btn,
+        .player-top-controls.size-medium .time-display {
+            font-size: 0.7rem;
+        }
+
+        .player-top-controls.size-large .dropdown-btn,
+        .player-top-controls.size-large .control-btn,
+        .player-top-controls.size-large .time-display {
+            font-size: 0.8rem;
+        }
+
+        /* Adjust dropdown content for different sizes */
+        .player-top-controls.size-small .dropdown-content {
+            min-width: 90px;
+            top: 25px;
+        }
+
+        .player-top-controls.size-small .dropdown-content button {
+            padding: 6px 10px;
+            font-size: 0.65rem;
+        }
+
+        .player-top-controls.size-medium .dropdown-content {
+            min-width: 100px;
+            top: 35px;
+        }
+
+        .player-top-controls.size-large .dropdown-content {
+            min-width: 110px;
+            top: 45px;
+        }
+
+        /* Adjust control buttons for different sizes */
+        .player-top-controls.size-small .control-btn {
+            padding: 2px;
+            width: 20px;
+            height: 20px;
+        }
+
+        .player-top-controls.size-medium .control-btn {
+            padding: 3px;
+            width: 24px;
+            height: 24px;
+        }
+
+        .player-top-controls.size-large .control-btn {
+            padding: 4px;
+            width: 28px;
+            height: 28px;
+        }
+
+        /* Width variants for top controls */
+        .player-top-controls.width-compact {
+            width: 90%;
+            left: 5%;
+            right: 5%;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .player-top-controls.width-full {
+            width: 100%;
+            left: 0;
+            right: 0;
+        }
+
+        .player-top-controls.width-custom {
+            width: 80%;
+            left: 10%;
+            right: 10%;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .top-controls-left, .top-controls-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 3px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: scale(1.1);
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-btn {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .dropdown-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.9);
+            min-width: 100px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5);
+            z-index: 1;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .dropdown-content button {
+            color: white;
+            padding: 8px 12px;
+            text-decoration: none;
+            display: block;
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+
+        .dropdown-content button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        #progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff416c, #ff4b2b);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.1s;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .left-controls, .right-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .time-display {
+            font-size: 0.7rem;
+            color: #ddd;
+            font-weight: 500;
+        }
+
+        .volume-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #volume-slider {
+            width: 60px;
+            height: 3px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        #volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff416c;
+            cursor: pointer;
+        }
+
+        /* Video Selection Section */
+        .video-selection {
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .video-selection h2 {
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 65, 108, 0.7);
+        }
+
+        .video-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .video-btn {
+            position: relative;
+            width: 200px;
+            height: 120px;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .video-btn:hover {
+            transform: translateY(-10px) rotateX(5deg);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.7);
+        }
+
+        .video-btn.active {
+            transform: translateY(-5px);
+            box-shadow: 0 0 20px rgba(255, 65, 108, 0.8);
+        }
+
+        .video-btn img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .video-btn:hover img {
+            transform: scale(1.1);
+        }
+
+        .video-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.7));
+            z-index: 1;
+        }
+
+        .video-title {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            font-size: 1;
+            z-index: 2;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Copyright section styles */
+        .copyright-section {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .copyright-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .copyright-year {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        /* Keyboard shortcuts hint */
+        .keyboard-hint {
+            position: absolute;
+            bottom: 80px;
+            right: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px;
+            border-radius: 5px;
+            font-size: 0.6rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .player-container.show-controls .keyboard-hint {
+            opacity: 0.7;
+        }
+
+        /* Responsive adjustments for top controls */
+        @media (max-width: 768px) {
+            .player-container {
+                width: 100%;
+                height: 200px;
+                left: 0;
+                transform: none;
+            }
+            
+            body {
+                padding-top: 200px;
+            }
+            
+            .controls {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+            
+            .left-controls, .right-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .player-top-controls {
+                padding: 5px 10px;
+                height: 30px;
+            }
+            
+            .player-top-controls.size-small {
+                height: 22px;
+                padding: 2px 8px;
+            }
+            
+            .player-top-controls.size-large {
+                height: 38px;
+                padding: 6px 12px;
+            }
+            
+            .player-top-controls.width-compact,
+            .player-top-controls.width-custom {
+                width: 100%;
+                left: 0;
+                right: 0;
+                border-radius: 0;
+            }
+            
+            .top-controls-left, .top-controls-right {
+                gap: 5px;
+            }
+            
+            .video-buttons {
+                gap: 15px;
+            }
+            
+            .video-btn {
+                width: 150px;
+                height: 90px;
+            }
+            
+            .copyright-footer {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .keyboard-hint {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Player container -->
+        <div class="player-container">
+            <!-- Neon Loader -->
+            <div class="neon-loader" id="neon-loader">
+                <div class="loader-content">
+                    <div class="loader-ring"></div>
+                    <div class="loader-text">LOADING...</div>
+                </div>
+            </div>
+            
+            <div id="player"></div>
+            
+            <!-- Keyboard shortcuts hint -->
+            <div class="keyboard-hint">
+                <div>Space: Play/Pause</div>
+                <div>F: Fullscreen</div>
+                <div>M: Mute</div>
+                <div>← →: Seek</div>
+                <div>↑ ↓: Volume</div>
+            </div>
+            
+            <!-- New top controls -->
+            <div class="player-top-controls size-medium width-full">
+                <div class="top-controls-left">
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <span id="current-speed">1x</span> ▾
+                        </button>
+                        <div class="dropdown-content">
+                            <button data-speed="0.25">0.25x</button>
+                            <button data-speed="0.5">0.5x</button>
+                            <button data-speed="0.75">0.75x</button>
+                            <button data-speed="1" class="active">Normal</button>
+                            <button data-speed="1.25">1.25x</button>
+                            <button data-speed="1.5">1.5x</button>
+                            <button data-speed="1.75">1.75x</button>
+                            <button data-speed="2">2x</button>
+                        </div>
+                    </div>
+                    
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <span id="current-quality">Auto</span> ▾
+                        </button>
+                        <div class="dropdown-content" id="quality-dropdown">
+                            <button data-quality="default">Auto</button>
+                            <button data-quality="hd1080">1080p</button>
+                            <button data-quality="hd720">720p</button>
+                            <button data-quality="large">480p</button>
+                            <button data-quality="medium">360p</button>
+                            <button data-quality="small">240p</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="top-controls-right">
+                   </div>
+            </div> 
+                    
+            <!-- Bottom controls -->
+            <div class="player-overlay">
+                <div class="progress-container">
+                    <div id="progress-bar"></div>
+                </div>
+                <div class="controls">
+                    <div class="left-controls">
+                        <button id="play-pause" class="control-btn">
+                            <i>▶</i>
+                        </button>
+                        <div class="time-display">
+                            <span id="current-time">0:00</span> / <span id="duration">0:00</span>
+                        </div>
+                    </div>
+                    <div class="right-controls">
+                        <div class="volume-container">
+                            <button id="mute-unmute" class="control-btn">
+                                <i>🔊</i>
+                            </button>
+                            <input type="range" id="volume-slider" min="0" max="100" value="50">
+                        </div>
+                        <button id="fullscreen-btn" class="control-btn">
+                            <i>⛶</i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+            <div class="video-buttons">
+                
+                    
+   
+    
+<<div class="video-btn" data-video-id="uBwA8PdlABE">
+    <img src="https://img.youtube.com/vi/uBwA8PdlABE/hqdefault.jpg">
+    <div class="video-title">Episode 1</div>
+</div>
+<div class="video-btn" data-video-id="7loQ-Hz0nWY">
+    <img src="https://img.youtube.com/vi/7loQ-Hz0nWY/hqdefault.jpg">
+    <div class="video-title">Episode 2</div>
+</div>
+<div class="video-btn" data-video-id="kw2zEj-beug">
+    <img src="https://img.youtube.com/vi/kw2zEj-beug/hqdefault.jpg">
+    <div class="video-title">Episode 3</div>
+</div>
+<div class="video-btn" data-video-id="rMYVuYOxBm4">
+    <img src="https://img.youtube.com/vi/rMYVuYOxBm4/hqdefault.jpg">
+    <div class="video-title">Episode 4</div>
+</div>
+<div class="video-btn" data-video-id="STNnk8Dszug">
+    <img src="https://img.youtube.com/vi/STNnk8Dszug/hqdefault.jpg">
+    <div class="video-title">Episode 5</div>
+</div>
+<div class="video-btn" data-video-id="rgAncstLvCQ">
+    <img src="https://img.youtube.com/vi/rgAncstLvCQ/hqdefault.jpg">
+    <div class="video-title">Episode 6</div>
+</div>
+<div class="video-btn" data-video-id="L-W3UEXoFc0">
+    <img src="https://img.youtube.com/vi/L-W3UEXoFc0/hqdefault.jpg">
+    <div class="video-title">Episode 7</div>
+</div>
+<div class="video-btn" data-video-id="PefCulUCRGk">
+    <img src="https://img.youtube.com/vi/PefCulUCRGk/hqdefault.jpg">
+    <div class="video-title">Episode 8</div>
+</div>
+<div class="video-btn" data-video-id="LjlSz7hgnZ8">
+    <img src="https://img.youtube.com/vi/LjlSz7hgnZ8/hqdefault.jpg">
+    <div class="video-title">Episode 9</div>
+</div>
+<div class="video-btn" data-video-id="ezw--xZOCw8">
+    <img src="https://img.youtube.com/vi/ezw--xZOCw8/hqdefault.jpg">
+    <div class="video-title">Episode 10</div>
+</div>
+<div class="video-btn" data-video-id="igylDbCKCls">
+    <img src="https://img.youtube.com/vi/igylDbCKCls/hqdefault.jpg">
+    <div class="video-title">Episode 11</div>
+</div>
+<div class="video-btn" data-video-id="ZFIYvh9CqRw">
+    <img src="https://img.youtube.com/vi/ZFIYvh9CqRw/hqdefault.jpg">
+    <div class="video-title">Episode 12</div>
+</div>
+<div class="video-btn" data-video-id="NbRAy6QzhUI">
+    <img src="https://img.youtube.com/vi/NbRAy6QzhUI/hqdefault.jpg">
+    <div class="video-title">Episode 13</div>
+</div>
+<div class="video-btn" data-video-id="7g7oIS4B0-4">
+    <img src="https://img.youtube.com/vi/7g7oIS4B0-4/hqdefault.jpg">
+    <div class="video-title">Episode 14</div>
+</div>
+<div class="video-btn" data-video-id="lznfv5CMNfQ">
+    <img src="https://img.youtube.com/vi/lznfv5CMNfQ/hqdefault.jpg">
+    <div class="video-title">Episode 15</div>
+</div>
+<div class="video-btn" data-video-id="K4qNhME0JpA">
+    <img src="https://img.youtube.com/vi/K4qNhME0JpA/hqdefault.jpg">
+    <div class="video-title">Episode 16</div>
+</div>
+<div class="video-btn" data-video-id="-9xn5UJizRc">
+    <img src="https://img.youtube.com/vi/-9xn5UJizRc/hqdefault.jpg">
+    <div class="video-title">Episode 17</div>
+</div>
+<div class="video-btn" data-video-id="ilqH4mV1YsI">
+    <img src="https://img.youtube.com/vi/ilqH4mV1YsI/hqdefault.jpg">
+    <div class="video-title">Episode 18</div>
+</div>
+<div class="video-btn" data-video-id="v_l49j1Fuw0">
+    <img src="https://img.youtube.com/vi/v_l49j1Fuw0/hqdefault.jpg">
+    <div class="video-title">Episode 19</div>
+</div>
+<div class="video-btn" data-video-id="DV8cr5tDOU4">
+    <img src="https://img.youtube.com/vi/DV8cr5tDOU4/hqdefault.jpg">
+    <div class="video-title">Episode 20</div>
+</div>
+<div class="video-btn" data-video-id="PE3lQiW0zIA">
+    <img src="https://img.youtube.com/vi/PE3lQiW0zIA/hqdefault.jpg">
+    <div class="video-title">Episode 21</div>
+</div>
+<div class="video-btn" data-video-id="V0m88VOrhh0">
+    <img src="https://img.youtube.com/vi/V0m88VOrhh0/hqdefault.jpg">
+    <div class="video-title">Episode 22</div>
+</div>
+<div class="video-btn" data-video-id="M66UgNAGx7k">
+    <img src="https://img.youtube.com/vi/M66UgNAGx7k/hqdefault.jpg">
+    <div class="video-title">Episode 23</div>
+</div>
+<div class="video-btn" data-video-id="Nd6dihM2NtE">
+    <img src="https://img.youtube.com/vi/Nd6dihM2NtE/hqdefault.jpg">
+    <div class="video-title">Episode 24</div>
+</div>
+<div class="video-btn" data-video-id="qahQlXtYGBQ">
+    <img src="https://img.youtube.com/vi/qahQlXtYGBQ/hqdefault.jpg">
+    <div class="video-title">Episode 25</div>
+</div>
+<div class="video-btn" data-video-id="wxbxbG53LxI">
+    <img src="https://img.youtube.com/vi/wxbxbG53LxI/hqdefault.jpg">
+    <div class="video-title">Episode 26</div>
+</div>
+<div class="video-btn" data-video-id="4uhefJwSOA0">
+    <img src="https://img.youtube.com/vi/4uhefJwSOA0/hqdefault.jpg">
+    <div class="video-title">Episode 27</div>
+</div>
+<div class="video-btn" data-video-id="jXRugxOA0SI">
+    <img src="https://img.youtube.com/vi/jXRugxOA0SI/hqdefault.jpg">
+    <div class="video-title">Episode 28</div>
+</div>
+<div class="video-btn" data-video-id="YgcTRTt3E6Y">
+    <img src="https://img.youtube.com/vi/YgcTRTt3E6Y/hqdefault.jpg">
+    <div class="video-title">Episode 29</div>
+</div>
+<div class="video-btn" data-video-id="CssMaLAT-FQ">
+    <img src="https://img.youtube.com/vi/CssMaLAT-FQ/hqdefault.jpg">
+    <div class="video-title">Episode 30</div>
+</div>
+<div class="video-btn" data-video-id="iZrMD4WyC98">
+    <img src="https://img.youtube.com/vi/iZrMD4WyC98/hqdefault.jpg">
+    <div class="video-title">Episode 31</div>
+</div>
+<div class="video-btn" data-video-id="3BMVLg15Xuo">
+    <img src="https://img.youtube.com/vi/3BMVLg15Xuo/hqdefault.jpg">
+    <div class="video-title">Episode 32</div>
+</div>
+<div class="video-btn" data-video-id="rzmtoHBPS-U">
+    <img src="https://img.youtube.com/vi/rzmtoHBPS-U/hqdefault.jpg">
+    <div class="video-title">Episode 33</div>
+</div>
+<div class="video-btn" data-video-id="7VPDgL7IXNs">
+    <img src="https://img.youtube.com/vi/7VPDgL7IXNs/hqdefault.jpg">
+    <div class="video-title">Episode 34</div>
+</div>
+<div class="video-btn" data-video-id="VMMN1UL-2E4">
+    <img src="https://img.youtube.com/vi/VMMN1UL-2E4/hqdefault.jpg">
+    <div class="video-title">Episode 35</div>
+</div>
+<div class="video-btn" data-video-id="_K0IK_I8v_k">
+    <img src="https://img.youtube.com/vi/_K0IK_I8v_k/hqdefault.jpg">
+    <div class="video-title">Episode 36</div>
+</div>
+<div class="video-btn" data-video-id="yZBECZ1Dc3E">
+    <img src="https://img.youtube.com/vi/yZBECZ1Dc3E/hqdefault.jpg">
+    <div class="video-title">Episode 37</div>
+</div>
+<div class="video-btn" data-video-id="grqx-pyzQ94">
+    <img src="https://img.youtube.com/vi/grqx-pyzQ94/hqdefault.jpg">
+    <div class="video-title">Episode 38</div>
+</div>
+<div class="video-btn" data-video-id="daYR93VJEMU">
+    <img src="https://img.youtube.com/vi/daYR93VJEMU/hqdefault.jpg">
+    <div class="video-title">Episode 39</div>
+</div>
+<div class="video-btn" data-video-id="fbBcklQzEr0">
+    <img src="https://img.youtube.com/vi/fbBcklQzEr0/hqdefault.jpg">
+    <div class="video-title">Episode 40</div>
+</div>
+<div class="video-btn" data-video-id="RfptxSkzPLY">
+    <img src="https://img.youtube.com/vi/RfptxSkzPLY/hqdefault.jpg">
+    <div class="video-title">Episode 41</div>
+</div>
+<div class="video-btn" data-video-id="gIyRBMIi6pI">
+    <img src="https://img.youtube.com/vi/gIyRBMIi6pI/hqdefault.jpg">
+    <div class="video-title">Episode 42</div>
+</div>
+<div class="video-btn" data-video-id="OFhmyqTKPHE">
+    <img src="https://img.youtube.com/vi/OFhmyqTKPHE/hqdefault.jpg">
+    <div class="video-title">Episode 43</div>
+</div>
+<div class="video-btn" data-video-id="5xJhig6Jmmg">
+    <img src="https://img.youtube.com/vi/5xJhig6Jmmg/hqdefault.jpg">
+    <div class="video-title">Episode 44</div>
+</div>
+<div class="video-btn" data-video-id="WIYwgk6YdZE">
+    <img src="https://img.youtube.com/vi/WIYwgk6YdZE/hqdefault.jpg">
+    <div class="video-title">Episode 45</div>
+</div>
+<div class="video-btn" data-video-id="j7ILQNh538w">
+    <img src="https://img.youtube.com/vi/j7ILQNh538w/hqdefault.jpg">
+    <div class="video-title">Episode 46</div>
+</div>
+<div class="video-btn" data-video-id="tU22bD0wG_M">
+    <img src="https://img.youtube.com/vi/tU22bD0wG_M/hqdefault.jpg">
+    <div class="video-title">Episode 47</div>
+</div>
+<div class="video-btn" data-video-id="CdhhcUHTF5E">
+    <img src="https://img.youtube.com/vi/CdhhcUHTF5E/hqdefault.jpg">
+    <div class="video-title">Episode 48</div>
+</div>
+<div class="video-btn" data-video-id="-J5Rmx974jE">
+    <img src="https://img.youtube.com/vi/-J5Rmx974jE/hqdefault.jpg">
+    <div class="video-title">Episode 49</div>
+</div>
+<div class="video-btn" data-video-id="5P7Oa25Vci8">
+    <img src="https://img.youtube.com/vi/5P7Oa25Vci8/hqdefault.jpg">
+    <div class="video-title">Episode 50</div>
+</div>
+<div class="video-btn" data-video-id="PfItCbm3Y_c">
+    <img src="https://img.youtube.com/vi/PfItCbm3Y_c/hqdefault.jpg">
+    <div class="video-title">Episode 51</div>
+</div>
+<div class="video-btn" data-video-id="DztQJbe2ue8">
+    <img src="https://img.youtube.com/vi/DztQJbe2ue8/hqdefault.jpg">
+    <div class="video-title">Episode 52</div>
+</div>
+<div class="video-btn" data-video-id="VmiApiYfGx8">
+    <img src="https://img.youtube.com/vi/VmiApiYfGx8/hqdefault.jpg">
+    <div class="video-title">Episode 53</div>
+</div>
+<div class="video-btn" data-video-id="ANROa4icIqg">
+    <img src="https://img.youtube.com/vi/ANROa4icIqg/hqdefault.jpg">
+    <div class="video-title">Episode 54</div>
+</div>
+<div class="video-btn" data-video-id="hIUoRMtZ554">
+    <img src="https://img.youtube.com/vi/hIUoRMtZ554/hqdefault.jpg">
+    <div class="video-title">Episode 55</div>
+</div>
+<div class="video-btn" data-video-id="j6BJIwQ5KNI">
+    <img src="https://img.youtube.com/vi/j6BJIwQ5KNI/hqdefault.jpg">
+    <div class="video-title">Episode 56</div>
+</div>
+<div class="video-btn" data-video-id="OQoXrlaAwag">
+    <img src="https://img.youtube.com/vi/OQoXrlaAwag/hqdefault.jpg">
+    <div class="video-title">Episode 57</div>
+</div>
+<div class="video-btn" data-video-id="n4N1BMmggjQ">
+    <img src="https://img.youtube.com/vi/n4N1BMmggjQ/hqdefault.jpg">
+    <div class="video-title">Episode 58</div>
+</div>
+<div class="video-btn" data-video-id="gzRwC8-Jk5M">
+    <img src="https://img.youtube.com/vi/gzRwC8-Jk5M/hqdefault.jpg">
+    <div class="video-title">Episode 59</div>
+</div>
+<div class="video-btn" data-video-id="vkHGIUnIFAk">
+    <img src="https://img.youtube.com/vi/vkHGIUnIFAk/hqdefault.jpg">
+    <div class="video-title">Episode 60</div>
+</div>
+<div class="video-btn" data-video-id="4I5VscVqMKg">
+    <img src="https://img.youtube.com/vi/4I5VscVqMKg/hqdefault.jpg">
+    <div class="video-title">Episode 61</div>
+</div>
+<div class="video-btn" data-video-id="y27pOh3u1L0">
+    <img src="https://img.youtube.com/vi/y27pOh3u1L0/hqdefault.jpg">
+    <div class="video-title">Episode 62</div>
+</div>
+<div class="video-btn" data-video-id="h1-v8ljiim4">
+    <img src="https://img.youtube.com/vi/h1-v8ljiim4/hqdefault.jpg">
+    <div class="video-title">Episode 63</div>
+</div>
+<div class="video-btn" data-video-id="twWAG1Hnq3w">
+    <img src="https://img.youtube.com/vi/twWAG1Hnq3w/hqdefault.jpg">
+    <div class="video-title">Episode 64</div>
+</div>
+<div class="video-btn" data-video-id="nNRihPoze30">
+    <img src="https://img.youtube.com/vi/nNRihPoze30/hqdefault.jpg">
+    <div class="video-title">Episode 65</div>
+</div>
+<div class="video-btn" data-video-id="MJ4RmBQ5mvY">
+    <img src="https://img.youtube.com/vi/MJ4RmBQ5mvY/hqdefault.jpg">
+    <div class="video-title">Episode 66</div>
+</div>
+<div class="video-btn" data-video-id="IluYcVc8dr4">
+    <img src="https://img.youtube.com/vi/IluYcVc8dr4/hqdefault.jpg">
+    <div class="video-title">Episode 67</div>
+</div>
+<div class="video-btn" data-video-id="96JMJ8K2DQc">
+    <img src="https://img.youtube.com/vi/96JMJ8K2DQc/hqdefault.jpg">
+    <div class="video-title">Episode 68</div>
+</div>
+<div class="video-btn" data-video-id="Hn96mTGZXsY">
+    <img src="https://img.youtube.com/vi/Hn96mTGZXsY/hqdefault.jpg">
+    <div class="video-title">Episode 69</div>
+</div>
+<div class="video-btn" data-video-id="iY-grNop2GU">
+    <img src="https://img.youtube.com/vi/iY-grNop2GU/hqdefault.jpg">
+    <div class="video-title">Episode 70</div>
+</div>
+<div class="video-btn" data-video-id="DJ9iu1nVS-Y">
+    <img src="https://img.youtube.com/vi/DJ9iu1nVS-Y/hqdefault.jpg">
+    <div class="video-title">Episode 71</div>
+</div>
+<div class="video-btn" data-video-id="HYelmYEzoXk">
+    <img src="https://img.youtube.com/vi/HYelmYEzoXk/hqdefault.jpg">
+    <div class="video-title">Episode 72</div>
+</div>
+<div class="video-btn" data-video-id="rhaHJEomVes">
+    <img src="https://img.youtube.com/vi/rhaHJEomVes/hqdefault.jpg">
+    <div class="video-title">Episode 73</div>
+</div>
+<div class="video-btn" data-video-id="MnbIDBgt-0c">
+    <img src="https://img.youtube.com/vi/MnbIDBgt-0c/hqdefault.jpg">
+    <div class="video-title">Episode 74</div>
+</div>
+<div class="video-btn" data-video-id="A615Eb3Kt5w">
+    <img src="https://img.youtube.com/vi/A615Eb3Kt5w/hqdefault.jpg">
+    <div class="video-title">Episode 75</div>
+</div>
+<div class="video-btn" data-video-id="O26_CnZRM5c">
+    <img src="https://img.youtube.com/vi/O26_CnZRM5c/hqdefault.jpg">
+    <div class="video-title">Episode 76</div>
+</div>
+<div class="video-btn" data-video-id="GPfupR7fgw8">
+    <img src="https://img.youtube.com/vi/GPfupR7fgw8/hqdefault.jpg">
+    <div class="video-title">Episode 77</div>
+</div>
+<div class="video-btn" data-video-id="VXz8RVuovD0">
+    <img src="https://img.youtube.com/vi/VXz8RVuovD0/hqdefault.jpg">
+    <div class="video-title">Episode 78</div>
+</div>
+<div class="video-btn" data-video-id="po8_fC4DBqo">
+    <img src="https://img.youtube.com/vi/po8_fC4DBqo/hqdefault.jpg">
+    <div class="video-title">Episode 79</div>
+</div>
+<div class="video-btn" data-video-id="eNqIj7hIFYY">
+    <img src="https://img.youtube.com/vi/eNqIj7hIFYY/hqdefault.jpg">
+    <div class="video-title">Episode 80</div>
+</div>
+<div class="video-btn" data-video-id="Y7k-iuMp8XM">
+    <img src="https://img.youtube.com/vi/Y7k-iuMp8XM/hqdefault.jpg">
+    <div class="video-title">Episode 81</div>
+</div>
+<div class="video-btn" data-video-id="tZt3qCvctWY">
+    <img src="https://img.youtube.com/vi/tZt3qCvctWY/hqdefault.jpg">
+    <div class="video-title">Episode 82</div>
+</div>
+<div class="video-btn" data-video-id="nZvbFVOZLCg">
+    <img src="https://img.youtube.com/vi/nZvbFVOZLCg/hqdefault.jpg">
+    <div class="video-title">Episode 83</div>
+</div>
+<div class="video-btn" data-video-id="2drPWpouJRs">
+    <img src="https://img.youtube.com/vi/2drPWpouJRs/hqdefault.jpg">
+    <div class="video-title">Episode 84</div>
+</div>
+<div class="video-btn" data-video-id="Vwb3fZ2T7kY">
+    <img src="https://img.youtube.com/vi/Vwb3fZ2T7kY/hqdefault.jpg">
+    <div class="video-title">Episode 85</div>
+</div>
+<div class="video-btn" data-video-id="UF_L0jXIXpE">
+    <img src="https://img.youtube.com/vi/UF_L0jXIXpE/hqdefault.jpg">
+    <div class="video-title">Episode 86</div>
+</div>
+<div class="video-btn" data-video-id="AZsHGx4fODc">
+    <img src="https://img.youtube.com/vi/AZsHGx4fODc/hqdefault.jpg">
+    <div class="video-title">Episode 87</div>
+</div>
+<div class="video-btn" data-video-id="YAiv5VEWFEM">
+    <img src="https://img.youtube.com/vi/YAiv5VEWFEM/hqdefault.jpg">
+    <div class="video-title">Episode 88</div>
+</div>
+<div class="video-btn" data-video-id="IvKGDEDTcW8">
+    <img src="https://img.youtube.com/vi/IvKGDEDTcW8/hqdefault.jpg">
+    <div class="video-title">Episode 89</div>
+</div>
+<div class="video-btn" data-video-id="Th9ums7XcBk">
+    <img src="https://img.youtube.com/vi/Th9ums7XcBk/hqdefault.jpg">
+    <div class="video-title">Episode 90</div>
+</div>
+<div class="video-btn" data-video-id="auee7U6rs-M">
+    <img src="https://img.youtube.com/vi/auee7U6rs-M/hqdefault.jpg">
+    <div class="video-title">Episode 91</div>
+</div>
+<div class="video-btn" data-video-id="UtXt0cQh9c0">
+    <img src="https://img.youtube.com/vi/UtXt0cQh9c0/hqdefault.jpg">
+    <div class="video-title">Episode 92</div>
+</div>
+<div class="video-btn" data-video-id="nuw3Og4jraU">
+    <img src="https://img.youtube.com/vi/nuw3Og4jraU/hqdefault.jpg">
+    <div class="video-title">Episode 93</div>
+</div>
+<div class="video-btn" data-video-id="TsuTfg0QbS4">
+    <img src="https://img.youtube.com/vi/TsuTfg0QbS4/hqdefault.jpg">
+    <div class="video-title">Episode 94</div>
+</div>
+<div class="video-btn" data-video-id="17kIkJ6LJM4">
+    <img src="https://img.youtube.com/vi/17kIkJ6LJM4/hqdefault.jpg">
+    <div class="video-title">Episode 95</div>
+</div>
+<div class="video-btn" data-video-id="5ldsI9uPg48">
+    <img src="https://img.youtube.com/vi/5ldsI9uPg48/hqdefault.jpg">
+    <div class="video-title">Episode 96</div>
+</div>
+<div class="video-btn" data-video-id="CRGHFuyDqOQ">
+    <img src="https://img.youtube.com/vi/CRGHFuyDqOQ/hqdefault.jpg">
+    <div class="video-title">Episode 97</div>
+</div>
+<div class="video-btn" data-video-id="ur69Iu5W_lw">
+    <img src="https://img.youtube.com/vi/ur69Iu5W_lw/hqdefault.jpg">
+    <div class="video-title">Episode 98</div>
+</div>
+<div class="video-btn" data-video-id="KYSYvy70nMI">
+    <img src="https://img.youtube.com/vi/KYSYvy70nMI/hqdefault.jpg">
+    <div class="video-title">Episode 99</div>
+</div>
+<div class="video-btn" data-video-id="cSYGd9VmGN4">
+    <img src="https://img.youtube.com/vi/cSYGd9VmGN4/hqdefault.jpg">
+    <div class="video-title">Episode 100</div>
+</div>
+<div class="video-btn" data-video-id="tW1Lch6uhv0">
+    <img src="https://img.youtube.com/vi/tW1Lch6uhv0/hqdefault.jpg">
+    <div class="video-title">Episode 101</div>
+</div>
+<div class="video-btn" data-video-id="fyG0ccg3B7k">
+    <img src="https://img.youtube.com/vi/fyG0ccg3B7k/hqdefault.jpg">
+    <div class="video-title">Episode 102</div>
+</div>
+<div class="video-btn" data-video-id="vbdvIKtwOVM">
+    <img src="https://img.youtube.com/vi/vbdvIKtwOVM/hqdefault.jpg">
+    <div class="video-title">Episode 103</div>
+</div>
+<div class="video-btn" data-video-id="mg2bUToqMx0">
+    <img src="https://img.youtube.com/vi/mg2bUToqMx0/hqdefault.jpg">
+    <div class="video-title">Episode 104</div>
+</div>
+<div class="video-btn" data-video-id="MSqBO1DnMUc">
+    <img src="https://img.youtube.com/vi/MSqBO1DnMUc/hqdefault.jpg">
+    <div class="video-title">Episode 105</div>
+</div>
+<div class="video-btn" data-video-id="4MhxZXZlYbY">
+    <img src="https://img.youtube.com/vi/4MhxZXZlYbY/hqdefault.jpg">
+    <div class="video-title">Episode 106</div>
+</div>
+<div class="video-btn" data-video-id="kvbZgG2jq0k">
+    <img src="https://img.youtube.com/vi/kvbZgG2jq0k/hqdefault.jpg">
+    <div class="video-title">Episode 107</div>
+</div>
+<div class="video-btn" data-video-id="0U09lUqCdxA">
+    <img src="https://img.youtube.com/vi/0U09lUqCdxA/hqdefault.jpg">
+    <div class="video-title">Episode 108</div>
+</div>
+<div class="video-btn" data-video-id="94rcVitl_RA">
+    <img src="https://img.youtube.com/vi/94rcVitl_RA/hqdefault.jpg">
+    <div class="video-title">Episode 109</div>
+</div>
+<div class="video-btn" data-video-id="KgBfwv3jl_c">
+    <img src="https://img.youtube.com/vi/KgBfwv3jl_c/hqdefault.jpg">
+    <div class="video-title">Episode 110</div>
+</div>
+<div class="video-btn" data-video-id="NBbrxu0VhFI">
+    <img src="https://img.youtube.com/vi/NBbrxu0VhFI/hqdefault.jpg">
+    <div class="video-title">Episode 111</div>
+</div>
+<div class="video-btn" data-video-id="aDsiwO6L2aE">
+    <img src="https://img.youtube.com/vi/aDsiwO6L2aE/hqdefault.jpg">
+    <div class="video-title">Episode 112</div>
+</div>
+<div class="video-btn" data-video-id="MHzMytFA0aU">
+    <img src="https://img.youtube.com/vi/MHzMytFA0aU/hqdefault.jpg">
+    <div class="video-title">Episode 113</div>
+</div>
+<div class="video-btn" data-video-id="jpXJTLsv4X0">
+    <img src="https://img.youtube.com/vi/jpXJTLsv4X0/hqdefault.jpg">
+    <div class="video-title">Episode 114</div>
+</div>
+<div class="video-btn" data-video-id="A8M2ikowIv4">
+    <img src="https://img.youtube.com/vi/A8M2ikowIv4/hqdefault.jpg">
+    <div class="video-title">Episode 115</div>
+</div>
+<div class="video-btn" data-video-id="PZKNOytDm9o">
+    <img src="https://img.youtube.com/vi/PZKNOytDm9o/hqdefault.jpg">
+    <div class="video-title">Episode 116</div>
+</div>
+<div class="video-btn" data-video-id="8m1gAwvFVJU">
+    <img src="https://img.youtube.com/vi/8m1gAwvFVJU/hqdefault.jpg">
+    <div class="video-title">Episode 117</div>
+</div>
+<div class="video-btn" data-video-id="PJEBLhmA37U">
+    <img src="https://img.youtube.com/vi/PJEBLhmA37U/hqdefault.jpg">
+    <div class="video-title">Episode 118</div>
+</div>
+<div class="video-btn" data-video-id="DS3zsrJzdfI">
+    <img src="https://img.youtube.com/vi/DS3zsrJzdfI/hqdefault.jpg">
+    <div class="video-title">Episode 119</div>
+</div>
+<div class="video-btn" data-video-id="nGGYzbk2B2I">
+    <img src="https://img.youtube.com/vi/nGGYzbk2B2I/hqdefault.jpg">
+    <div class="video-title">Episode 120</div>
+</div>
+<div class="video-btn" data-video-id="0hmeLvfuqBE">
+    <img src="https://img.youtube.com/vi/0hmeLvfuqBE/hqdefault.jpg">
+    <div class="video-title">Episode 121</div>
+</div>
+<div class="video-btn" data-video-id="d70Zr8zdmJc">
+    <img src="https://img.youtube.com/vi/d70Zr8zdmJc/hqdefault.jpg">
+    <div class="video-title">Episode 122</div>
+</div>
+<div class="video-btn" data-video-id="wpsW1FhAi28">
+    <img src="https://img.youtube.com/vi/wpsW1FhAi28/hqdefault.jpg">
+    <div class="video-title">Episode 123</div>
+</div>
+<div class="video-btn" data-video-id="cJBCpODLf-0">
+    <img src="https://img.youtube.com/vi/cJBCpODLf-0/hqdefault.jpg">
+    <div class="video-title">Episode 124</div>
+</div>
+<div class="video-btn" data-video-id="RjAAmlnqVlo">
+    <img src="https://img.youtube.com/vi/RjAAmlnqVlo/hqdefault.jpg">
+    <div class="video-title">Episode 125</div>
+</div>
+<div class="video-btn" data-video-id="8q19FIarNfk">
+    <img src="https://img.youtube.com/vi/8q19FIarNfk/hqdefault.jpg">
+    <div class="video-title">Episode 126</div>
+</div>
+<div class="video-btn" data-video-id="wFlmoRmWeXI">
+    <img src="https://img.youtube.com/vi/wFlmoRmWeXI/hqdefault.jpg">
+    <div class="video-title">Episode 127</div>
+</div>
+<div class="video-btn" data-video-id="kt-oE_QmFAk">
+    <img src="https://img.youtube.com/vi/kt-oE_QmFAk/hqdefault.jpg">
+    <div class="video-title">Episode 128</div>
+</div>
+<div class="video-btn" data-video-id="v_Fx1MtXTb4">
+    <img src="https://img.youtube.com/vi/v_Fx1MtXTb4/hqdefault.jpg">
+    <div class="video-title">Episode 129</div>
+</div>
+<div class="video-btn" data-video-id="QGZnBFW9dkg">
+    <img src="https://img.youtube.com/vi/QGZnBFW9dkg/hqdefault.jpg">
+    <div class="video-title">Episode 130</div>
+</div>
+<div class="video-btn" data-video-id="klBvzXSlEac">
+    <img src="https://img.youtube.com/vi/klBvzXSlEac/hqdefault.jpg">
+    <div class="video-title">Episode 131</div>
+</div>
+<div class="video-btn" data-video-id="1sp-Yov5oKA">
+    <img src="https://img.youtube.com/vi/1sp-Yov5oKA/hqdefault.jpg">
+    <div class="video-title">Episode 132</div>
+</div>
+<div class="video-btn" data-video-id="7azrWlwkZGE">
+    <img src="https://img.youtube.com/vi/7azrWlwkZGE/hqdefault.jpg">
+    <div class="video-title">Episode 133</div>
+</div>
+<div class="video-btn" data-video-id="ox8I86U4RGk">
+    <img src="https://img.youtube.com/vi/ox8I86U4RGk/hqdefault.jpg">
+    <div class="video-title">Episode 134</div>
+</div>
+<div class="video-btn" data-video-id="On5rNtDXz04">
+    <img src="https://img.youtube.com/vi/On5rNtDXz04/hqdefault.jpg">
+    <div class="video-title">Episode 135</div>
+</div>
+<div class="video-btn" data-video-id="zCoKkW5T85k">
+    <img src="https://img.youtube.com/vi/zCoKkW5T85k/hqdefault.jpg">
+    <div class="video-title">Episode 136</div>
+</div>
+<div class="video-btn" data-video-id="V2F3QM3iwCI">
+    <img src="https://img.youtube.com/vi/V2F3QM3iwCI/hqdefault.jpg">
+    <div class="video-title">Episode 137</div>
+</div>
+<div class="video-btn" data-video-id="Ln9Gvekc0L4">
+    <img src="https://img.youtube.com/vi/Ln9Gvekc0L4/hqdefault.jpg">
+    <div class="video-title">Episode 138</div>
+</div>
+<div class="video-btn" data-video-id="wuILDGDsWqE">
+    <img src="https://img.youtube.com/vi/wuILDGDsWqE/hqdefault.jpg">
+    <div class="video-title">Episode 139</div>
+</div>
+<div class="video-btn" data-video-id="-ybLcR-j-Zg">
+    <img src="https://img.youtube.com/vi/-ybLcR-j-Zg/hqdefault.jpg">
+    <div class="video-title">Episode 140</div>
+</div>
+<div class="video-btn" data-video-id="BSlLwgrcurY">
+    <img src="https://img.youtube.com/vi/BSlLwgrcurY/hqdefault.jpg">
+    <div class="video-title">Episode 141</div>
+</div>
+<div class="video-btn" data-video-id="l0bFuJf1HCE">
+    <img src="https://img.youtube.com/vi/l0bFuJf1HCE/hqdefault.jpg">
+    <div class="video-title">Episode 142</div>
+</div>
+<div class="video-btn" data-video-id="Ej3BaiHiWcY">
+    <img src="https://img.youtube.com/vi/Ej3BaiHiWcY/hqdefault.jpg">
+    <div class="video-title">Episode 143</div>
+</div>
+<div class="video-btn" data-video-id="c7R14U9PuVA">
+    <img src="https://img.youtube.com/vi/c7R14U9PuVA/hqdefault.jpg">
+    <div class="video-title">Episode 144</div>
+</div>
+<div class="video-btn" data-video-id="cUIlC4vRTGM">
+    <img src="https://img.youtube.com/vi/cUIlC4vRTGM/hqdefault.jpg">
+    <div class="video-title">Episode 145</div>
+</div>
+<div class="video-btn" data-video-id="l5zHAZwbEOc">
+    <img src="https://img.youtube.com/vi/l5zHAZwbEOc/hqdefault.jpg">
+    <div class="video-title">Episode 146</div>
+</div>
+<div class="video-btn" data-video-id="YrclHfP_390">
+    <img src="https://img.youtube.com/vi/YrclHfP_390/hqdefault.jpg">
+    <div class="video-title">Episode 147</div>
+</div>
+<div class="video-btn" data-video-id="23KuCAzLV4E">
+    <img src="https://img.youtube.com/vi/23KuCAzLV4E/hqdefault.jpg">
+    <div class="video-title">Episode 148</div>
+</div>
+<div class="video-btn" data-video-id="vwPMzJmUnKM">
+    <img src="https://img.youtube.com/vi/vwPMzJmUnKM/hqdefault.jpg">
+    <div class="video-title">Episode 149</div>
+</div>
+<div class="video-btn" data-video-id="C8bAcmOQJsI">
+    <img src="https://img.youtube.com/vi/C8bAcmOQJsI/hqdefault.jpg">
+    <div class="video-title">Episode 150</div>
+</div>
+<div class="video-btn" data-video-id="CXDy8pxCoxs">
+    <img src="https://img.youtube.com/vi/CXDy8pxCoxs/hqdefault.jpg">
+    <div class="video-title">Episode 151</div>
+</div>
+<div class="video-btn" data-video-id="Dny1poSoEts">
+    <img src="https://img.youtube.com/vi/Dny1poSoEts/hqdefault.jpg">
+    <div class="video-title">Episode 152</div>
+</div>
+<div class="video-btn" data-video-id="zj7f43NZrEw">
+    <img src="https://img.youtube.com/vi/zj7f43NZrEw/hqdefault.jpg">
+    <div class="video-title">Episode 153</div>
+</div>
+<div class="video-btn" data-video-id="mbhaAOoynuM">
+    <img src="https://img.youtube.com/vi/mbhaAOoynuM/hqdefault.jpg">
+    <div class="video-title">Episode 154</div>
+</div>
+<div class="video-btn" data-video-id="xBPMMW1a59k">
+    <img src="https://img.youtube.com/vi/xBPMMW1a59k/hqdefault.jpg">
+    <div class="video-title">Episode 155</div>
+</div>
+<div class="video-btn" data-video-id="hYCGw1WZv0Y">
+    <img src="https://img.youtube.com/vi/hYCGw1WZv0Y/hqdefault.jpg">
+    <div class="video-title">Episode 156</div>
+</div>
+<div class="video-btn" data-video-id="EPEmc-3Dwv0">
+    <img src="https://img.youtube.com/vi/EPEmc-3Dwv0/hqdefault.jpg">
+    <div class="video-title">Episode 157</div>
+</div>
+<div class="video-btn" data-video-id="Z-mOQMb5wYk">
+    <img src="https://img.youtube.com/vi/Z-mOQMb5wYk/hqdefault.jpg">
+    <div class="video-title">Episode 158</div>
+</div>
+<div class="video-btn" data-video-id="MX-54n8crco">
+    <img src="https://img.youtube.com/vi/MX-54n8crco/hqdefault.jpg">
+    <div class="video-title">Episode 159</div>
+</div>
+<div class="video-btn" data-video-id="bhQGxIjkaeU">
+    <img src="https://img.youtube.com/vi/bhQGxIjkaeU/hqdefault.jpg">
+    <div class="video-title">Episode 160</div>
+</div>
+<div class="video-btn" data-video-id="fNBaymLs5ww">
+    <img src="https://img.youtube.com/vi/fNBaymLs5ww/hqdefault.jpg">
+    <div class="video-title">Episode 161</div>
+</div>
+<div class="video-btn" data-video-id="_zlZFJOpilw">
+    <img src="https://img.youtube.com/vi/_zlZFJOpilw/hqdefault.jpg">
+    <div class="video-title">Episode 162</div>
+</div>
+<div class="video-btn" data-video-id="_EDYql2_enw">
+    <img src="https://img.youtube.com/vi/_EDYql2_enw/hqdefault.jpg">
+    <div class="video-title">Episode 163</div>
+</div>
+<div class="video-btn" data-video-id="WTEyy9PXQqw">
+    <img src="https://img.youtube.com/vi/WTEyy9PXQqw/hqdefault.jpg">
+    <div class="video-title">Episode 164</div>
+</div>
+<div class="video-btn" data-video-id="aPVVrm6ZkF0">
+    <img src="https://img.youtube.com/vi/aPVVrm6ZkF0/hqdefault.jpg">
+    <div class="video-title">Episode 165</div>
+</div>
+<div class="video-btn" data-video-id="ORTvcP3KAA0">
+    <img src="https://img.youtube.com/vi/ORTvcP3KAA0/hqdefault.jpg">
+    <div class="video-title">Episode 166</div>
+</div>
+<div class="video-btn" data-video-id="6SNs5DTDAa4">
+    <img src="https://img.youtube.com/vi/6SNs5DTDAa4/hqdefault.jpg">
+    <div class="video-title">Episode 167</div>
+</div>
+<div class="video-btn" data-video-id="XtO5AlXzgZk">
+    <img src="https://img.youtube.com/vi/XtO5AlXzgZk/hqdefault.jpg">
+    <div class="video-title">Episode 168</div>
+</div>
+<div class="video-btn" data-video-id="lQW18OLaCO4">
+    <img src="https://img.youtube.com/vi/lQW18OLaCO4/hqdefault.jpg">
+    <div class="video-title">Episode 169</div>
+</div>
+<div class="video-btn" data-video-id="-pop4bMkL9U">
+    <img src="https://img.youtube.com/vi/-pop4bMkL9U/hqdefault.jpg">
+    <div class="video-title">Episode 170</div>
+</div>
+<div class="video-btn" data-video-id="5HU8xRx70x8">
+    <img src="https://img.youtube.com/vi/5HU8xRx70x8/hqdefault.jpg">
+    <div class="video-title">Episode 171</div>
+</div>
+<div class="video-btn" data-video-id="njYf29q4xhY">
+    <img src="https://img.youtube.com/vi/njYf29q4xhY/hqdefault.jpg">
+    <div class="video-title">Episode 172</div>
+</div>
+<div class="video-btn" data-video-id="ZQrbXGByxJA">
+    <img src="https://img.youtube.com/vi/ZQrbXGByxJA/hqdefault.jpg">
+    <div class="video-title">Episode 173</div>
+</div>
+<div class="video-btn" data-video-id="1p-WCldi6ew">
+    <img src="https://img.youtube.com/vi/1p-WCldi6ew/hqdefault.jpg">
+    <div class="video-title">Episode 174</div>
+</div>
+<div class="video-btn" data-video-id="trdKCobdC14">
+    <img src="https://img.youtube.com/vi/trdKCobdC14/hqdefault.jpg">
+    <div class="video-title">Episode 175</div>
+</div>
+<div class="video-btn" data-video-id="-7iIhxlleUI">
+    <img src="https://img.youtube.com/vi/-7iIhxlleUI/hqdefault.jpg">
+    <div class="video-title">Episode 176</div>
+</div>
+<div class="video-btn" data-video-id="he-HTaN6GOE">
+    <img src="https://img.youtube.com/vi/he-HTaN6GOE/hqdefault.jpg">
+    <div class="video-title">Episode 177</div>
+</div>
+<div class="video-btn" data-video-id="KD5Q4NzH-Io">
+    <img src="https://img.youtube.com/vi/KD5Q4NzH-Io/hqdefault.jpg">
+    <div class="video-title">Episode 178</div>
+</div>
+<div class="video-btn" data-video-id="G4idl8RsSzc">
+    <img src="https://img.youtube.com/vi/G4idl8RsSzc/hqdefault.jpg">
+    <div class="video-title">Episode 179</div>
+</div>
+<div class="video-btn" data-video-id="5cAP6LWnDBY">
+    <img src="https://img.youtube.com/vi/5cAP6LWnDBY/hqdefault.jpg">
+    <div class="video-title">Episode 180</div>
+</div>
+<div class="video-btn" data-video-id="oTQ3SO-pYlI">
+    <img src="https://img.youtube.com/vi/oTQ3SO-pYlI/hqdefault.jpg">
+    <div class="video-title">Episode 181</div>
+</div>
+<div class="video-btn" data-video-id="zNWRsxDi5HE">
+    <img src="https://img.youtube.com/vi/zNWRsxDi5HE/hqdefault.jpg">
+    <div class="video-title">Episode 182</div>
+</div>
+<div class="video-btn" data-video-id="Euc-RRA58CQ">
+    <img src="https://img.youtube.com/vi/Euc-RRA58CQ/hqdefault.jpg">
+    <div class="video-title">Episode 183</div>
+</div>
+<div class="video-btn" data-video-id="rbcOG-LSyu0">
+    <img src="https://img.youtube.com/vi/rbcOG-LSyu0/hqdefault.jpg">
+    <div class="video-title">Episode 184</div>
+</div>
+<div class="video-btn" data-video-id="We9ubQO75Zg">
+    <img src="https://img.youtube.com/vi/We9ubQO75Zg/hqdefault.jpg">
+    <div class="video-title">Episode 185</div>
+</div>
+<div class="video-btn" data-video-id="EmohaSVZozA">
+    <img src="https://img.youtube.com/vi/EmohaSVZozA/hqdefault.jpg">
+    <div class="video-title">Episode 186</div>
+</div>
+<div class="video-btn" data-video-id="YsJp_scrD34">
+    <img src="https://img.youtube.com/vi/YsJp_scrD34/hqdefault.jpg">
+    <div class="video-title">Episode 187</div>
+</div>
+<div class="video-btn" data-video-id="J6V_M2QsGXw">
+    <img src="https://img.youtube.com/vi/J6V_M2QsGXw/hqdefault.jpg">
+    <div class="video-title">Episode 188</div>
+</div>
+<div class="video-btn" data-video-id="yhuFTQUXUI4">
+    <img src="https://img.youtube.com/vi/yhuFTQUXUI4/hqdefault.jpg">
+    <div class="video-title">Episode 189</div>
+</div>
+<div class="video-btn" data-video-id="XiNAXVeWpW4">
+    <img src="https://img.youtube.com/vi/XiNAXVeWpW4/hqdefault.jpg">
+    <div class="video-title">Episode 190</div>
+</div>
+<div class="video-btn" data-video-id="E1UdWgc3v3s">
+    <img src="https://img.youtube.com/vi/E1UdWgc3v3s/hqdefault.jpg">
+    <div class="video-title">Episode 191</div>
+</div>
+<div class="video-btn" data-video-id="8zlUYzLhPxI">
+    <img src="https://img.youtube.com/vi/8zlUYzLhPxI/hqdefault.jpg">
+    <div class="video-title">Episode 192</div>
+</div>
+<div class="video-btn" data-video-id="b4BWizeR45w">
+    <img src="https://img.youtube.com/vi/b4BWizeR45w/hqdefault.jpg">
+    <div class="video-title">Episode 193</div>
+</div>
+<div class="video-btn" data-video-id="wyGvwLDYVkM">
+    <img src="https://img.youtube.com/vi/wyGvwLDYVkM/hqdefault.jpg">
+    <div class="video-title">Episode 194</div>
+</div>
+<div class="video-btn" data-video-id="E7MRFxcT6f0">
+    <img src="https://img.youtube.com/vi/E7MRFxcT6f0/hqdefault.jpg">
+    <div class="video-title">Episode 195</div>
+</div>
+<div class="video-btn" data-video-id="OwkV89GVWPs">
+    <img src="https://img.youtube.com/vi/OwkV89GVWPs/hqdefault.jpg">
+    <div class="video-title">Episode 196</div>
+</div>
+<div class="video-btn" data-video-id="dHnqFr0k-Dc">
+    <img src="https://img.youtube.com/vi/dHnqFr0k-Dc/hqdefault.jpg">
+    <div class="video-title">Episode 197</div>
+</div>
+<div class="video-btn" data-video-id="OBy1asZVXmA">
+    <img src="https://img.youtube.com/vi/OBy1asZVXmA/hqdefault.jpg">
+    <div class="video-title">Episode 198</div>
+</div>
+<div class="video-btn" data-video-id="nYgL972AVWM">
+    <img src="https://img.youtube.com/vi/nYgL972AVWM/hqdefault.jpg">
+    <div class="video-title">Episode 199</div>
+</div>
+<div class="video-btn" data-video-id="HrZ2L0rT89M">
+    <img src="https://img.youtube.com/vi/HrZ2L0rT89M/hqdefault.jpg">
+    <div class="video-title">Episode 200</div>
+</div>
+<div class="video-btn" data-video-id="yMmWBDcvigg">
+    <img src="https://img.youtube.com/vi/yMmWBDcvigg/hqdefault.jpg">
+    <div class="video-title">Episode 201</div>
+</div>
+<div class="video-btn" data-video-id="Zm5twabC58M">
+    <img src="https://img.youtube.com/vi/Zm5twabC58M/hqdefault.jpg">
+    <div class="video-title">Episode 202</div>
+</div>
+<div class="video-btn" data-video-id="z1g7Yz9dzmQ">
+    <img src="https://img.youtube.com/vi/z1g7Yz9dzmQ/hqdefault.jpg">
+    <div class="video-title">Episode 203</div>
+</div>
+<div class="video-btn" data-video-id="rlle7dZ8z00">
+    <img src="https://img.youtube.com/vi/rlle7dZ8z00/hqdefault.jpg">
+    <div class="video-title">Episode 204</div>
+</div>
+<div class="video-btn" data-video-id="d5qtWA2znz4">
+    <img src="https://img.youtube.com/vi/d5qtWA2znz4/hqdefault.jpg">
+    <div class="video-title">Episode 205</div>
+</div>
+<div class="video-btn" data-video-id="m_AzCv9Y19k">
+    <img src="https://img.youtube.com/vi/m_AzCv9Y19k/hqdefault.jpg">
+    <div class="video-title">Episode 206</div>
+</div>
+<div class="video-btn" data-video-id="uSEGBFmaWAE">
+    <img src="https://img.youtube.com/vi/uSEGBFmaWAE/hqdefault.jpg">
+    <div class="video-title">Episode 207</div>
+</div>
+<div class="video-btn" data-video-id="DkpnwKVJtHs">
+    <img src="https://img.youtube.com/vi/DkpnwKVJtHs/hqdefault.jpg">
+    <div class="video-title">Episode 208</div>
+</div>
+<div class="video-btn" data-video-id="x463cEKNvHA">
+    <img src="https://img.youtube.com/vi/x463cEKNvHA/hqdefault.jpg">
+    <div class="video-title">Episode 209</div>
+</div>
+<div class="video-btn" data-video-id="jdS--aaVyfA">
+    <img src="https://img.youtube.com/vi/jdS--aaVyfA/hqdefault.jpg">
+    <div class="video-title">Episode 210</div>
+</div>
+<div class="video-btn" data-video-id="IeG1eOk3_IQ">
+    <img src="https://img.youtube.com/vi/IeG1eOk3_IQ/hqdefault.jpg">
+    <div class="video-title">Episode 211</div>
+</div>
+<div class="video-btn" data-video-id="neoxKmleduA">
+    <img src="https://img.youtube.com/vi/neoxKmleduA/hqdefault.jpg">
+    <div class="video-title">Episode 212</div>
+</div>
+<div class="video-btn" data-video-id="rUOtwm96DpY">
+    <img src="https://img.youtube.com/vi/rUOtwm96DpY/hqdefault.jpg">
+    <div class="video-title">Episode 213</div>
+</div>
+<div class="video-btn" data-video-id="1CsmTmBuHSc">
+    <img src="https://img.youtube.com/vi/1CsmTmBuHSc/hqdefault.jpg">
+    <div class="video-title">Episode 214</div>
+</div>
+<div class="video-btn" data-video-id="ssTsmRpe8Eo">
+    <img src="https://img.youtube.com/vi/ssTsmRpe8Eo/hqdefault.jpg">
+    <div class="video-title">Episode 215</div>
+</div>
+<div class="video-btn" data-video-id="jjf53MsaVu0">
+    <img src="https://img.youtube.com/vi/jjf53MsaVu0/hqdefault.jpg">
+    <div class="video-title">Episode 216</div>
+</div>
+<div class="video-btn" data-video-id="M38-Oi-4XQk">
+    <img src="https://img.youtube.com/vi/M38-Oi-4XQk/hqdefault.jpg">
+    <div class="video-title">Episode 217</div>
+</div>
+<div class="video-btn" data-video-id="Q5zy_CPDPEQ">
+    <img src="https://img.youtube.com/vi/Q5zy_CPDPEQ/hqdefault.jpg">
+    <div class="video-title">Episode 218</div>
+</div>
+<div class="video-btn" data-video-id="QMFh9oXqWpk">
+    <img src="https://img.youtube.com/vi/QMFh9oXqWpk/hqdefault.jpg">
+    <div class="video-title">Episode 219</div>
+</div>
+<div class="video-btn" data-video-id="QgSHLa3YViY">
+    <img src="https://img.youtube.com/vi/QgSHLa3YViY/hqdefault.jpg">
+    <div class="video-title">Episode 220</div>
+</div>
+<div class="video-btn" data-video-id="_yQzsS1xhD4">
+    <img src="https://img.youtube.com/vi/_yQzsS1xhD4/hqdefault.jpg">
+    <div class="video-title">Episode 221</div>
+</div>
+<div class="video-btn" data-video-id="ZN7VrAmvN7I">
+    <img src="https://img.youtube.com/vi/ZN7VrAmvN7I/hqdefault.jpg">
+    <div class="video-title">Last Episode</div>
+</div>
+
+
+
+
+
+
+
+         
+            </div>
+        </div>
+        
+        <!-- Copyright section -->
+        <div class="copyright-section">
+            <div class="copyright-footer">
+                <span class="copyright-year">Powerd By: 🩷~𝑺𝒚𝒆𝒅 𝑴𝒖𝒛𝒂𝒎𝒎𝒊𝒍 𝑺𝒉𝒂𝒉~🩷</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Your existing JavaScript code remains the same...
+        // YouTube API setup
+        let player;
+        let isPlaying = false;
+        let isMuted = false;
+        let currentVolume = 50;
+        let isFullscreen = false;
+        let isTheaterMode = false;
+        let currentPlaybackRate = 1;
+        let currentVideoId = 'uBwA8PdlABE'; // Default video
+        let currentQuality = 'default';
+        let currentTime = 0;
+        let controlsTimeout;
+        let controlsVisible = false;
+
+        // Load YouTube IFrame API
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        // Initialize player when API is ready
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: currentVideoId,
+                playerVars: {
+                    'playsinline': 1,
+                    'controls': 0,
+                    'rel': 0,
+                    'modestbranding': 1,
+                    'autoplay': 1 // Enable autoplay
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        // When player is ready
+        function onPlayerReady(event) {
+            updateTimeDisplay();
+            setInterval(updateProgressBar, 500);
+            document.getElementById('volume-slider').value = currentVolume;
+            
+            // Get available quality levels
+            getAvailableQualities();
+            
+            // Hide loader when video is ready
+            setTimeout(() => {
+                document.getElementById('neon-loader').classList.add('hidden');
+            }, 1000);
+            
+            // Start autoplay
+            player.playVideo();
+            
+            // Hide controls after 3 seconds
+            hideControls();
+        }
+
+        // Handle player state changes
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.PLAYING) {
+                isPlaying = true;
+                document.getElementById('play-pause').innerHTML = '<i>⏸</i>';
+            } else {
+                isPlaying = false;
+                document.getElementById('play-pause').innerHTML = '<i>▶</i>';
+            }
+            
+            // Save current time when video is paused or ended
+            if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+                currentTime = player.getCurrentTime();
+            }
+        }
+
+        // Update progress bar
+        function updateProgressBar() {
+            if (player && player.getDuration) {
+                const currentTime = player.getCurrentTime();
+                const duration = player.getDuration();
+                const progress = (currentTime / duration) * 100;
+                
+                document.getElementById('progress-bar').style.width = `${progress}%`;
+                updateTimeDisplay();
+            }
+        }
+
+        // Update time display
+        function updateTimeDisplay() {
+            if (player && player.getDuration) {
+                const currentTime = player.getCurrentTime();
+                const duration = player.getDuration();
+                
+                document.getElementById('current-time').textContent = formatTime(currentTime);
+                document.getElementById('duration').textContent = formatTime(duration);
+            }
+        }
+
+        // Format time in MM:SS
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        // Play/Pause button
+        document.getElementById('play-pause').addEventListener('click', function() {
+            if (isPlaying) {
+                player.pauseVideo();
+            } else {
+                player.playVideo();
+            }
+            showControlsTemporarily();
+        });
+
+        // Mute/Unmute button
+        document.getElementById('mute-unmute').addEventListener('click', function() {
+            if (isMuted) {
+                player.unMute();
+                document.getElementById('mute-unmute').innerHTML = '<i>🔊</i>';
+                isMuted = false;
+            } else {
+                player.mute();
+                document.getElementById('mute-unmute').innerHTML = '<i>🔇</i>';
+                isMuted = true;
+            }
+            showControlsTemporarily();
+        });
+
+        // Volume slider
+        document.getElementById('volume-slider').addEventListener('input', function() {
+            currentVolume = this.value;
+            player.setVolume(currentVolume);
+            
+            if (currentVolume == 0) {
+                document.getElementById('mute-unmute').innerHTML = '<i>🔇</i>';
+                isMuted = true;
+            } else {
+                document.getElementById('mute-unmute').innerHTML = '<i>🔊</i>';
+                isMuted = false;
+            }
+            showControlsTemporarily();
+        });
+
+        // Progress bar click to seek
+        document.querySelector('.progress-container').addEventListener('click', function(e) {
+            const rect = this.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            const duration = player.getDuration();
+            const newTime = percent * duration;
+            
+            player.seekTo(newTime, true);
+            showControlsTemporarily();
+        });
+
+        // Fullscreen functionality
+        document.getElementById('fullscreen-btn').addEventListener('click', function() {
+            const playerContainer = document.querySelector('.player-container');
+            
+            if (!isFullscreen) {
+                if (playerContainer.requestFullscreen) {
+                    playerContainer.requestFullscreen();
+                } else if (playerContainer.webkitRequestFullscreen) {
+                    playerContainer.webkitRequestFullscreen();
+                } else if (playerContainer.msRequestFullscreen) {
+                    playerContainer.msRequestFullscreen();
+                }
+                
+                // Rotate to landscape on mobile
+                if (window.screen.orientation && window.screen.orientation.lock) {
+                    window.screen.orientation.lock('landscape').catch(function(error) {
+                        console.log('Orientation lock failed: ', error);
+                    });
+                }
+                
+                isFullscreen = true;
+                document.getElementById('fullscreen-btn').innerHTML = '<i>⛶</i>';
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+                
+                // Rotate back to portrait on mobile
+                if (window.screen.orientation && window.screen.orientation.unlock) {
+                    window.screen.orientation.unlock();
+                }
+                
+                isFullscreen = false;
+                document.getElementById('fullscreen-btn').innerHTML = '<i>⛶</i>';
+            }
+            showControlsTemporarily();
+        });
+
+        // Listen for fullscreen change events
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('msfullscreenchange', handleFullscreenChange);
+
+        function handleFullscreenChange() {
+            isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+        }
+
+        // Playback speed controls
+        document.querySelectorAll('.dropdown-content button[data-speed]').forEach(button => {
+            button.addEventListener('click', function() {
+                const speed = parseFloat(this.getAttribute('data-speed'));
+                player.setPlaybackRate(speed);
+                currentPlaybackRate = speed;
+                document.getElementById('current-speed').textContent = speed + 'x';
+                
+                // Update active state
+                document.querySelectorAll('.dropdown-content button[data-speed]').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+                showControlsTemporarily();
+            });
+        });
+
+        // Quality controls
+        document.querySelectorAll('#quality-dropdown button[data-quality]').forEach(button => {
+            button.addEventListener('click', function() {
+                const quality = this.getAttribute('data-quality');
+                changeQuality(quality);
+                showControlsTemporarily();
+            });
+        });
+
+        // Video selection buttons
+        document.querySelectorAll('.video-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const videoId = this.getAttribute('data-video-id');
+                changeVideo(videoId);
+                
+                // Update active state
+                document.querySelectorAll('.video-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+
+        // Function to change video
+        function changeVideo(videoId) {
+            // Show loader when changing video
+            document.getElementById('neon-loader').classList.remove('hidden');
+            
+            // Save current time before changing video
+            currentTime = 0;
+            currentVideoId = videoId;
+            
+            // Load new video
+            player.loadVideoById(videoId);
+            
+            // Hide loader when video is ready
+            setTimeout(() => {
+                document.getElementById('neon-loader').classList.add('hidden');
+            }, 1500);
+        }
+
+        // Function to change video quality
+        function changeQuality(quality) {
+            // Show loader when changing quality
+            document.getElementById('neon-loader').classList.remove('hidden');
+            
+            // Save current time before reloading
+            currentTime = player.getCurrentTime();
+            currentQuality = quality;
+            
+            // Update UI
+            document.getElementById('current-quality').textContent = 
+                quality === 'default' ? 'Auto' : 
+                quality === 'hd1080' ? '1080p' :
+                quality === 'hd720' ? '720p' :
+                quality === 'large' ? '480p' :
+                quality === 'medium' ? '360p' : '240p';
+            
+            // Update active state
+            document.querySelectorAll('#quality-dropdown button[data-quality]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`#quality-dropdown button[data-quality="${quality}"]`).classList.add('active');
+            
+            // Reload player with new quality
+            reloadPlayerWithQuality(quality);
+        }
+
+        // Function to reload player with specific quality
+        function reloadPlayerWithQuality(quality) {
+            // Store current state
+            const wasPlaying = isPlaying;
+            
+            // Destroy current player
+            player.destroy();
+            
+            // Create new player with quality parameter
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: currentVideoId,
+                playerVars: {
+                    'playsinline': 1,
+                    'controls': 0,
+                    'rel': 0,
+                    'modestbranding': 1,
+                    'vq': quality === 'default' ? undefined : quality,
+                    'autoplay': 1 // Enable autoplay
+                },
+                events: {
+                    'onReady': function(event) {
+                        onPlayerReady(event);
+                        
+                        // Restore previous state
+                        player.setVolume(currentVolume);
+                        player.setPlaybackRate(currentPlaybackRate);
+                        
+                        if (wasPlaying) {
+                            player.playVideo();
+                        }
+                        
+                        // Seek to saved time
+                        player.seekTo(currentTime, true);
+                        
+                        // Hide loader
+                        setTimeout(() => {
+                            document.getElementById('neon-loader').classList.add('hidden');
+                        }, 1000);
+                    },
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        // Function to get available qualities (for future enhancement)
+        function getAvailableQualities() {
+            // Note: The YouTube API doesn't provide a direct way to get available qualities
+            // This is a limitation of the IFrame API
+            console.log("Available qualities cannot be directly retrieved via the YouTube API");
+        }
+
+        // Auto-hide controls functionality
+        function hideControls() {
+            const playerContainer = document.querySelector('.player-container');
+            playerContainer.classList.remove('show-controls');
+            controlsVisible = false;
+        }
+
+        function showControls() {
+            const playerContainer = document.querySelector('.player-container');
+            playerContainer.classList.add('show-controls');
+            controlsVisible = true;
+        }
+
+        function toggleControls() {
+            if (controlsVisible) {
+                hideControls();
+            } else {
+                showControls();
+                // Auto-hide after 3 seconds
+                clearTimeout(controlsTimeout);
+                controlsTimeout = setTimeout(hideControls, 3000);
+            }
+        }
+
+        function showControlsTemporarily() {
+            showControls();
+            
+            // Clear existing timeout
+            clearTimeout(controlsTimeout);
+            
+            // Set new timeout to hide controls after 3 seconds
+            controlsTimeout = setTimeout(hideControls, 3000);
+        }
+
+        // Show controls on mouse move
+        document.querySelector('.player-container').addEventListener('mousemove', function() {
+            showControlsTemporarily();
+        });
+
+        // Toggle controls on click
+        document.querySelector('.player-container').addEventListener('click', function(e) {
+            // Don't toggle if clicking on controls directly
+            if (e.target.closest('.player-overlay') || e.target.closest('.player-top-controls')) {
+                return;
+            }
+            toggleControls();
+        });
+
+        // Keep controls visible when hovering over them
+        document.querySelector('.player-overlay').addEventListener('mouseenter', function() {
+            clearTimeout(controlsTimeout);
+        });
+
+        document.querySelector('.player-top-controls').addEventListener('mouseenter', function() {
+            clearTimeout(controlsTimeout);
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', function(e) {
+            // Only handle keys when player is focused or document has focus
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return; // Don't interfere with form inputs
+            }
+            
+            switch(e.key) {
+                case ' ':
+                case 'Spacebar':
+                    e.preventDefault();
+                    if (isPlaying) {
+                        player.pauseVideo();
+                    } else {
+                        player.playVideo();
+                    }
+                    showControlsTemporarily();
+                    break;
+                    
+                case 'f':
+                case 'F':
+                    e.preventDefault();
+                    const playerContainer = document.querySelector('.player-container');
+                    if (!isFullscreen) {
+                        if (playerContainer.requestFullscreen) {
+                            playerContainer.requestFullscreen();
+                        } else if (playerContainer.webkitRequestFullscreen) {
+                            playerContainer.webkitRequestFullscreen();
+                        } else if (playerContainer.msRequestFullscreen) {
+                            playerContainer.msRequestFullscreen();
+                        }
+                        isFullscreen = true;
+                    } else {
+                        if (document.exitFullscreen) {
+                            document.exitFullscreen();
+                        } else if (document.webkitExitFullscreen) {
+                            document.webkitExitFullscreen();
+                        } else if (document.msExitFullscreen) {
+                            document.msExitFullscreen();
+                        }
+                        isFullscreen = false;
+                    }
+                    showControlsTemporarily();
+                    break;
+                    
+                case 'm':
+                case 'M':
+                    e.preventDefault();
+                    if (isMuted) {
+                        player.unMute();
+                        document.getElementById('mute-unmute').innerHTML = '<i>🔊</i>';
+                        isMuted = false;
+                    } else {
+                        player.mute();
+                        document.getElementById('mute-unmute').innerHTML = '<i>🔇</i>';
+                        isMuted = true;
+                    }
+                    showControlsTemporarily();
+                    break;
+                    
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    const currentTime = player.getCurrentTime();
+                    player.seekTo(currentTime - 10, true);
+                    showControlsTemporarily();
+                    break;
+                    
+                case 'ArrowRight':
+                    e.preventDefault();
+                    const currentTime2 = player.getCurrentTime();
+                    player.seekTo(currentTime2 + 10, true);
+                    showControlsTemporarily();
+                    break;
+                    
+                case 'ArrowUp':
+                    e.preventDefault();
+                    if (currentVolume < 100) {
+                        currentVolume = Math.min(100, currentVolume + 10);
+                        document.getElementById('volume-slider').value = currentVolume;
+                        player.setVolume(currentVolume);
+                        if (isMuted && currentVolume > 0) {
+                            player.unMute();
+                            document.getElementById('mute-unmute').innerHTML = '<i>🔊</i>';
+                            isMuted = false;
+                        }
+                    }
+                    showControlsTemporarily();
+                    break;
+                    
+                case 'ArrowDown':
+                    e.preventDefault();
+                    if (currentVolume > 0) {
+                        currentVolume = Math.max(0, currentVolume - 10);
+                        document.getElementById('volume-slider').value = currentVolume;
+                        player.setVolume(currentVolume);
+                        if (currentVolume === 0) {
+                            player.mute();
+                            document.getElementById('mute-unmute').innerHTML = '<i>🔇</i>';
+                            isMuted = true;
+                        }
+                    }
+                    showControlsTemporarily();
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
