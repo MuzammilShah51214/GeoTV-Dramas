@@ -1,0 +1,2190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HUM TV TELE-FILMS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #000;
+            color: white;
+            padding-top: 200px; /* Make space for fixed player */
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .player-container {
+            background-color: #000;
+            border-radius: 0 0 12px 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
+            margin-bottom: 40px;
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 355px;
+            height: 180px;
+            cursor: pointer;
+            z-index: 1000;
+        } 
+
+        #player {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Neon Loader Styles */
+        .neon-loader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 10;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        .neon-loader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader-content {
+            text-align: center;
+        }
+
+        .loader-ring {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            position: relative;
+            margin: 0 auto 10px;
+        }
+
+        .loader-ring:before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            left: 5px;
+            background: linear-gradient(0deg, #ff00cc 0%, #333399 100%);
+            animation: spin 1.5s linear infinite;
+            box-shadow: 0 0 10px #ff00cc, 0 0 20px #ff00cc, 0 0 30px #ff00cc;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loader-text {
+            font-size: 0.8rem;
+            color: #fff;
+            text-shadow: 0 0 5px #ff00cc, 0 0 10px #ff00cc;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .player-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .player-container.show-controls .player-overlay {
+            opacity: 1;
+            
+        }
+
+        .player-top-controls {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px 19px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            
+            /* Default size */
+            height: 25px;
+            min-height: 55px;
+            max-height: 50px;
+        }
+
+        .player-container.show-controls .player-top-controls {
+            opacity: 1;
+        }
+
+        /* Top Player Control Container Size Options */
+        .player-top-controls.size-small {
+            height: 25px;
+            padding: 3px 15px;
+        }
+
+        .player-top-controls.size-medium {
+            height: 35px;
+            padding: 5px 19px;
+        }
+
+        .player-top-controls.size-large {
+            height: 45px;
+            padding: 8px 22px;
+        }
+
+        /* Adjust font sizes for different control sizes */
+        .player-top-controls.size-small .dropdown-btn,
+        .player-top-controls.size-small .control-btn,
+        .player-top-controls.size-small .time-display {
+            font-size: 0.65rem;
+        }
+
+        .player-top-controls.size-medium .dropdown-btn,
+        .player-top-controls.size-medium .control-btn,
+        .player-top-controls.size-medium .time-display {
+            font-size: 0.7rem;
+        }
+
+        .player-top-controls.size-large .dropdown-btn,
+        .player-top-controls.size-large .control-btn,
+        .player-top-controls.size-large .time-display {
+            font-size: 0.8rem;
+        }
+
+        /* Adjust dropdown content for different sizes */
+        .player-top-controls.size-small .dropdown-content {
+            min-width: 90px;
+            top: 25px;
+        }
+
+        .player-top-controls.size-small .dropdown-content button {
+            padding: 6px 10px;
+            font-size: 0.65rem;
+        }
+
+        .player-top-controls.size-medium .dropdown-content {
+            min-width: 100px;
+            top: 35px;
+        }
+
+        .player-top-controls.size-large .dropdown-content {
+            min-width: 110px;
+            top: 45px;
+        }
+
+        /* Adjust control buttons for different sizes */
+        .player-top-controls.size-small .control-btn {
+            padding: 2px;
+            width: 20px;
+            height: 20px;
+        }
+
+        .player-top-controls.size-medium .control-btn {
+            padding: 3px;
+            width: 24px;
+            height: 24px;
+        }
+
+        .player-top-controls.size-large .control-btn {
+            padding: 4px;
+            width: 28px;
+            height: 28px;
+        }
+
+        /* Width variants for top controls */
+        .player-top-controls.width-compact {
+            width: 90%;
+            left: 5%;
+            right: 5%;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .player-top-controls.width-full {
+            width: 100%;
+            left: 0;
+            right: 0;
+        }
+
+        .player-top-controls.width-custom {
+            width: 80%;
+            left: 10%;
+            right: 10%;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .top-controls-left, .top-controls-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 3px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: scale(1.1);
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-btn {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .dropdown-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.9);
+            min-width: 100px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5);
+            z-index: 1;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .dropdown-content button {
+            color: white;
+            padding: 8px 12px;
+            text-decoration: none;
+            display: block;
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+
+        .dropdown-content button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        #progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff416c, #ff4b2b);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.1s;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .left-controls, .right-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .time-display {
+            font-size: 0.7rem;
+            color: #ddd;
+            font-weight: 500;
+        }
+
+        .volume-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #volume-slider {
+            width: 60px;
+            height: 3px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        #volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff416c;
+            cursor: pointer;
+        }
+
+        /* Video Selection Section */
+        .video-selection {
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .video-selection h2 {
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 65, 108, 0.7);
+        }
+
+        .video-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .video-btn {
+            position: relative;
+            width: 200px;
+            height: 120px;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .video-btn:hover {
+            transform: translateY(-10px) rotateX(5deg);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.7);
+        }
+
+        .video-btn.active {
+            transform: translateY(-5px);
+            box-shadow: 0 0 20px rgba(255, 65, 108, 0.8);
+        }
+
+        .video-btn img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .video-btn:hover img {
+            transform: scale(1.1);
+        }
+
+        .video-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.7));
+            z-index: 1;
+        }
+
+        .video-title {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            font-size: 3;
+            z-index: 2;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Copyright section styles */
+        .copyright-section {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .copyright-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .copyright-year {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        /* Keyboard shortcuts hint */
+        .keyboard-hint {
+            position: absolute;
+            bottom: 80px;
+            right: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px;
+            border-radius: 5px;
+            font-size: 0.6rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .player-container.show-controls .keyboard-hint {
+            opacity: 0.7;
+        }
+
+        /* Responsive adjustments for top controls */
+        @media (max-width: 768px) {
+            .player-container {
+                width: 100%;
+                height: 200px;
+                left: 0;
+                transform: none;
+            }
+            
+            body {
+                padding-top: 200px;
+            }
+            
+            .controls {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+            
+            .left-controls, .right-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .player-top-controls {
+                padding: 5px 10px;
+                height: 30px;
+            }
+            
+            .player-top-controls.size-small {
+                height: 22px;
+                padding: 2px 8px;
+            }
+            
+            .player-top-controls.size-large {
+                height: 38px;
+                padding: 6px 12px;
+            }
+            
+            .player-top-controls.width-compact,
+            .player-top-controls.width-custom {
+                width: 100%;
+                left: 0;
+                right: 0;
+                border-radius: 0;
+            }
+            
+            .top-controls-left, .top-controls-right {
+                gap: 5px;
+            }
+            
+            .video-buttons {
+                gap: 15px;
+            }
+            
+            .video-btn {
+                width: 150px;
+                height: 90px;
+            }
+            
+            .copyright-footer {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .keyboard-hint {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Player container -->
+        <div class="player-container">
+            <!-- Neon Loader -->
+            <div class="neon-loader" id="neon-loader">
+                <div class="loader-content">
+                    <div class="loader-ring"></div>
+                    <div class="loader-text">LOADING...</div>
+                </div>
+            </div>
+            
+            <div id="player"></div>
+            
+            <!-- Keyboard shortcuts hint -->
+            <div class="keyboard-hint">
+                <div>Space: Play/Pause</div>
+                <div>F: Fullscreen</div>
+                <div>M: Mute</div>
+                <div>← →: Seek</div>
+                <div>↑ ↓: Volume</div>
+            </div>
+            
+            <!-- New top controls -->
+            <div class="player-top-controls size-medium width-full">
+                <div class="top-controls-left">
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <span id="current-speed">1x</span> ▾
+                        </button>
+                        <div class="dropdown-content">
+                            <button data-speed="0.25">0.25x</button>
+                            <button data-speed="0.5">0.5x</button>
+                            <button data-speed="0.75">0.75x</button>
+                            <button data-speed="1" class="active">Normal</button>
+                            <button data-speed="1.25">1.25x</button>
+                            <button data-speed="1.5">1.5x</button>
+                            <button data-speed="1.75">1.75x</button>
+                            <button data-speed="2">2x</button>
+                        </div>
+                    </div>
+                    
+                    <div class="dropdown">
+                        <button class="dropdown-btn">
+                            <span id="current-quality">Auto</span> ▾
+                        </button>
+                        <div class="dropdown-content" id="quality-dropdown">
+                            <button data-quality="default">Auto</button>
+                            <button data-quality="hd1080">1080p</button>
+                            <button data-quality="hd720">720p</button>
+                            <button data-quality="large">480p</button>
+                            <button data-quality="medium">360p</button>
+                            <button data-quality="small">240p</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="top-controls-right">
+                   </div>
+            </div> 
+                    
+            <!-- Bottom controls -->
+            <div class="player-overlay">
+                <div class="progress-container">
+                    <div id="progress-bar"></div>
+                </div>
+                <div class="controls">
+                    <div class="left-controls">
+                        <button id="play-pause" class="control-btn">
+                            <i>▶</i>
+                        </button>
+                        <div class="time-display">
+                            <span id="current-time">0:00</span> / <span id="duration">0:00</span>
+                        </div>
+                    </div>
+                    <div class="right-controls">
+                        <div class="volume-container">
+                            <button id="mute-unmute" class="control-btn">
+                                <i>🔊</i>
+                            </button>
+                            <input type="range" id="volume-slider" min="0" max="100" value="50">
+                        </div>
+                        <button id="fullscreen-btn" class="control-btn">
+                            <i>⛶</i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+            <div class="video-buttons">
+                
+                    
+                <div class="video-btn" data-video-id="H_TYjniZIp0">
+    <img src="https://i.ytimg.com/vi/H_TYjniZIp0/maxresdefault.jpg">
+    <div class="video-title">Episode 01</div>
+</div>
+<div class="video-btn" data-video-id="sIFnE2x7lc4">
+    <img src="https://i.ytimg.com/vi/sIFnE2x7lc4/maxresdefault.jpg">
+    <div class="video-title">Episode 02</div>
+</div>
+<div class="video-btn" data-video-id="Bjceak5GVX8">
+    <img src="https://i.ytimg.com/vi/Bjceak5GVX8/maxresdefault.jpg">
+    <div class="video-title">Episode 03</div>
+</div>
+<div class="video-btn" data-video-id="tMEExsA-6L0">
+    <img src="https://i.ytimg.com/vi/tMEExsA-6L0/maxresdefault.jpg">
+    <div class="video-title">Episode 04</div>
+</div>
+<div class="video-btn" data-video-id="gBm5L8mSWj4">
+    <img src="https://i.ytimg.com/vi/gBm5L8mSWj4/maxresdefault.jpg">
+    <div class="video-title">Episode 05</div>
+</div>
+<div class="video-btn" data-video-id="u9xqqA-VoEg">
+    <img src="https://i.ytimg.com/vi/u9xqqA-VoEg/maxresdefault.jpg">
+    <div class="video-title">Episode 06</div>
+</div>
+<div class="video-btn" data-video-id="_YlyRIMToDs">
+    <img src="https://i.ytimg.com/vi/_YlyRIMToDs/maxresdefault.jpg">
+    <div class="video-title">Episode 07</div>
+</div>
+<div class="video-btn" data-video-id="EKuuke9Ams8">
+    <img src="https://i.ytimg.com/vi/EKuuke9Ams8/maxresdefault.jpg">
+    <div class="video-title">Episode 08</div>
+</div>
+<div class="video-btn" data-video-id="MBZzz6mXjzk">
+    <img src="https://i.ytimg.com/vi/MBZzz6mXjzk/maxresdefault.jpg">
+    <div class="video-title">Episode 09</div>
+</div>
+<div class="video-btn" data-video-id="g8yHnNqnUSo">
+    <img src="https://i.ytimg.com/vi/g8yHnNqnUSo/maxresdefault.jpg">
+    <div class="video-title">Episode 10</div>
+</div>
+<div class="video-btn" data-video-id="botZ0kOdJOA">
+    <img src="https://i.ytimg.com/vi/botZ0kOdJOA/maxresdefault.jpg">
+    <div class="video-title">Episode 11</div>
+</div>
+<div class="video-btn" data-video-id="SivQJMZuQHQ">
+    <img src="https://i.ytimg.com/vi/SivQJMZuQHQ/maxresdefault.jpg">
+    <div class="video-title">Episode 12</div>
+</div>
+<div class="video-btn" data-video-id="sfQ0ZSufeB0">
+    <img src="https://i.ytimg.com/vi/sfQ0ZSufeB0/maxresdefault.jpg">
+    <div class="video-title">Episode 13</div>
+</div>
+<div class="video-btn" data-video-id="if0WlFGbPy4">
+    <img src="https://i.ytimg.com/vi/if0WlFGbPy4/maxresdefault.jpg">
+    <div class="video-title">Episode 14</div>
+</div>
+<div class="video-btn" data-video-id="fndKZHPAxs0">
+    <img src="https://i.ytimg.com/vi/fndKZHPAxs0/maxresdefault.jpg">
+    <div class="video-title">Episode 15</div>
+</div>
+<div class="video-btn" data-video-id="LUDCzT3izoU">
+    <img src="https://i.ytimg.com/vi/LUDCzT3izoU/maxresdefault.jpg">
+    <div class="video-title">Episode 16</div>
+</div>
+<div class="video-btn" data-video-id="usXT2lOWito">
+    <img src="https://i.ytimg.com/vi/usXT2lOWito/maxresdefault.jpg">
+    <div class="video-title">Episode 17</div>
+</div>
+<div class="video-btn" data-video-id="9h9QWFbfBOo">
+    <img src="https://i.ytimg.com/vi/9h9QWFbfBOo/maxresdefault.jpg">
+    <div class="video-title">Episode 18</div>
+</div>
+<div class="video-btn" data-video-id="A4vaEfXWAn0">
+    <img src="https://i.ytimg.com/vi/A4vaEfXWAn0/maxresdefault.jpg">
+    <div class="video-title">Episode 19</div>
+</div>
+<div class="video-btn" data-video-id="NiKELkgc4wQ">
+    <img src="https://i.ytimg.com/vi/NiKELkgc4wQ/maxresdefault.jpg">
+    <div class="video-title">Episode 20</div>
+</div>
+<div class="video-btn" data-video-id="WP8YBbfTl6c">
+    <img src="https://i.ytimg.com/vi/WP8YBbfTl6c/maxresdefault.jpg">
+    <div class="video-title">Episode 21</div>
+</div>
+<div class="video-btn" data-video-id="T8SDPgiv8kw">
+    <img src="https://i.ytimg.com/vi/T8SDPgiv8kw/maxresdefault.jpg">
+    <div class="video-title">Episode 22</div>
+</div>
+<div class="video-btn" data-video-id="jzRzrRe2Mj4">
+    <img src="https://i.ytimg.com/vi/jzRzrRe2Mj4/maxresdefault.jpg">
+    <div class="video-title">Episode 23</div>
+</div>
+<div class="video-btn" data-video-id="6a8UY8oaLsw">
+    <img src="https://i.ytimg.com/vi/6a8UY8oaLsw/maxresdefault.jpg">
+    <div class="video-title">Episode 24</div>
+</div>
+<div class="video-btn" data-video-id="uWQpIIqlWgo">
+    <img src="https://i.ytimg.com/vi/uWQpIIqlWgo/maxresdefault.jpg">
+    <div class="video-title">Episode 25</div>
+</div>
+<div class="video-btn" data-video-id="9xLt5v6sUA8">
+    <img src="https://i.ytimg.com/vi/9xLt5v6sUA8/maxresdefault.jpg">
+    <div class="video-title">Episode 26</div>
+</div>
+<div class="video-btn" data-video-id="HBNemDP-pzw">
+    <img src="https://i.ytimg.com/vi/HBNemDP-pzw/maxresdefault.jpg">
+    <div class="video-title">Episode 27</div>
+</div>
+<div class="video-btn" data-video-id="j0iegCLh0bg">
+    <img src="https://i.ytimg.com/vi/j0iegCLh0bg/maxresdefault.jpg">
+    <div class="video-title">Episode 28</div>
+</div>
+<div class="video-btn" data-video-id="SJM8bvgd61o">
+    <img src="https://i.ytimg.com/vi/SJM8bvgd61o/maxresdefault.jpg">
+    <div class="video-title">Episode 29</div>
+</div>
+<div class="video-btn" data-video-id="kCG3w62bWTI">
+    <img src="https://i.ytimg.com/vi/kCG3w62bWTI/maxresdefault.jpg">
+    <div class="video-title">Episode 30</div>
+</div>
+<div class="video-btn" data-video-id="UXeNdNbh97c">
+    <img src="https://i.ytimg.com/vi/UXeNdNbh97c/maxresdefault.jpg">
+    <div class="video-title">Episode 31</div>
+</div>
+<div class="video-btn" data-video-id="KeAclyaqARc">
+    <img src="https://i.ytimg.com/vi/KeAclyaqARc/maxresdefault.jpg">
+    <div class="video-title">Episode 32</div>
+</div>
+<div class="video-btn" data-video-id="ekV-INJudhs">
+    <img src="https://i.ytimg.com/vi/ekV-INJudhs/maxresdefault.jpg">
+    <div class="video-title">Episode 33</div>
+</div>
+<div class="video-btn" data-video-id="8di4IWy8XsI">
+    <img src="https://i.ytimg.com/vi/8di4IWy8XsI/maxresdefault.jpg">
+    <div class="video-title">Episode 34</div>
+</div>
+<div class="video-btn" data-video-id="Utq8QMa7xhs">
+    <img src="https://i.ytimg.com/vi/Utq8QMa7xhs/maxresdefault.jpg">
+    <div class="video-title">Episode 35</div>
+</div>
+<div class="video-btn" data-video-id="tqTJdmdRjBM">
+    <img src="https://i.ytimg.com/vi/tqTJdmdRjBM/maxresdefault.jpg">
+    <div class="video-title">Episode 36</div>
+</div>
+<div class="video-btn" data-video-id="9muS7f94-NY">
+    <img src="https://i.ytimg.com/vi/9muS7f94-NY/maxresdefault.jpg">
+    <div class="video-title">Episode 37</div>
+</div>
+<div class="video-btn" data-video-id="TcSh9hu00M4">
+    <img src="https://i.ytimg.com/vi/TcSh9hu00M4/maxresdefault.jpg">
+    <div class="video-title">Episode 38</div>
+</div>
+<div class="video-btn" data-video-id="IGLZ0NfotTE">
+    <img src="https://i.ytimg.com/vi/IGLZ0NfotTE/maxresdefault.jpg">
+    <div class="video-title">Episode 39</div>
+</div>
+<div class="video-btn" data-video-id="26iJ6evZzgU">
+    <img src="https://i.ytimg.com/vi/26iJ6evZzgU/maxresdefault.jpg">
+    <div class="video-title">Episode 40</div>
+</div>
+<div class="video-btn" data-video-id="Ej95wi-08v0">
+    <img src="https://i.ytimg.com/vi/Ej95wi-08v0/maxresdefault.jpg">
+    <div class="video-title">Episode 41</div>
+</div>
+<div class="video-btn" data-video-id="OgYpxbZu4Lc">
+    <img src="https://i.ytimg.com/vi/OgYpxbZu4Lc/maxresdefault.jpg">
+    <div class="video-title">Episode 42</div>
+</div>
+<div class="video-btn" data-video-id="dZB047my01o">
+    <img src="https://i.ytimg.com/vi/dZB047my01o/maxresdefault.jpg">
+    <div class="video-title">Episode 43</div>
+</div>
+<div class="video-btn" data-video-id="unuNBpV1z5u">
+    <img src="https://i.ytimg.com/vi/unuNBpV1z5u/maxresdefault.jpg">
+    <div class="video-title">Episode 44</div>
+</div>
+<div class="video-btn" data-video-id="io-KIF6qzYw">
+    <img src="https://i.ytimg.com/vi/io-KIF6qzYw/maxresdefault.jpg">
+    <div class="video-title">Episode 45</div>
+</div>
+<div class="video-btn" data-video-id="Nfiq1NGC2OU">
+    <img src="https://i.ytimg.com/vi/Nfiq1NGC2OU/maxresdefault.jpg">
+    <div class="video-title">Episode 46</div>
+</div>
+<div class="video-btn" data-video-id="vlHN-W94rwo">
+    <img src="https://i.ytimg.com/vi/vlHN-W94rwo/maxresdefault.jpg">
+    <div class="video-title">Episode 47</div>
+</div>
+<div class="video-btn" data-video-id="CePbws_cPOg">
+    <img src="https://i.ytimg.com/vi/CePbws_cPOg/maxresdefault.jpg">
+    <div class="video-title">Episode 48</div>
+</div>
+<div class="video-btn" data-video-id="mcRHtL3FYs4">
+    <img src="https://i.ytimg.com/vi/mcRHtL3FYs4/maxresdefault.jpg">
+    <div class="video-title">Episode 49</div>
+</div>
+<div class="video-btn" data-video-id="6_j5CnSS1ck">
+    <img src="https://i.ytimg.com/vi/6_j5CnSS1ck/maxresdefault.jpg">
+    <div class="video-title">Episode 50</div>
+</div>
+<div class="video-btn" data-video-id="s8M0WrHU_2s">
+    <img src="https://i.ytimg.com/vi/s8M0WrHU_2s/maxresdefault.jpg">
+    <div class="video-title">Episode 51</div>
+</div>
+<div class="video-btn" data-video-id="q5roA0W-xP4">
+    <img src="https://i.ytimg.com/vi/q5roA0W-xP4/maxresdefault.jpg">
+    <div class="video-title">Episode 52</div>
+</div>
+<div class="video-btn" data-video-id="aMbwiNnDQaE">
+    <img src="https://i.ytimg.com/vi/aMbwiNnDQaE/maxresdefault.jpg">
+    <div class="video-title">Episode 53</div>
+</div>
+<div class="video-btn" data-video-id="hRUToPzD8VM">
+    <img src="https://i.ytimg.com/vi/hRUToPzD8VM/maxresdefault.jpg">
+    <div class="video-title">Episode 54</div>
+</div>
+<div class="video-btn" data-video-id="gzjyxoTXAcc">
+    <img src="https://i.ytimg.com/vi/gzjyxoTXAcc/maxresdefault.jpg">
+    <div class="video-title">Episode 55</div>
+</div>
+<div class="video-btn" data-video-id="R1jdU1pdYME">
+    <img src="https://i.ytimg.com/vi/R1jdU1pdYME/maxresdefault.jpg">
+    <div class="video-title">Episode 56</div>
+</div>
+<div class="video-btn" data-video-id="6sx6jIzuu0Q">
+    <img src="https://i.ytimg.com/vi/6sx6jIzuu0Q/maxresdefault.jpg">
+    <div class="video-title">Episode 57</div>
+</div>
+<div class="video-btn" data-video-id="Rj3gfEhbFk8">
+    <img src="https://i.ytimg.com/vi/Rj3gfEhbFk8/maxresdefault.jpg">
+    <div class="video-title">Episode 58</div>
+</div>
+<div class="video-btn" data-video-id="8Fo6zF8hueI">
+    <img src="https://i.ytimg.com/vi/8Fo6zF8hueI/maxresdefault.jpg">
+    <div class="video-title">Episode 59</div>
+</div>
+<div class="video-btn" data-video-id="CQIUE6-qOzw">
+    <img src="https://i.ytimg.com/vi/CQIUE6-qOzw/maxresdefault.jpg">
+    <div class="video-title">Episode 60</div>
+</div>
+<div class="video-btn" data-video-id="KWDggXkS-zo">
+    <img src="https://i.ytimg.com/vi/KWDggXkS-zo/maxresdefault.jpg">
+    <div class="video-title">Episode 61</div>
+</div>
+<div class="video-btn" data-video-id="W0UwhlJtQJA">
+    <img src="https://i.ytimg.com/vi/W0UwhlJtQJA/maxresdefault.jpg">
+    <div class="video-title">Episode 62</div>
+</div>
+<div class="video-btn" data-video-id="sU4JxP8xC9A">
+    <img src="https://i.ytimg.com/vi/sU4JxP8xC9A/maxresdefault.jpg">
+    <div class="video-title">Episode 63</div>
+</div>
+<div class="video-btn" data-video-id="-G9cFii13uE">
+    <img src="https://i.ytimg.com/vi/-G9cFii13uE/maxresdefault.jpg">
+    <div class="video-title">Episode 64</div>
+</div>
+<div class="video-btn" data-video-id="UuyJbnlqNIY">
+    <img src="https://i.ytimg.com/vi/UuyJbnlqNIY/maxresdefault.jpg">
+    <div class="video-title">Episode 65</div>
+</div>
+<div class="video-btn" data-video-id="mfhSIbvXIwY">
+    <img src="https://i.ytimg.com/vi/mfhSIbvXIwY/maxresdefault.jpg">
+    <div class="video-title">Episode 66</div>
+</div>
+<div class="video-btn" data-video-id="GWRSoPniVr0">
+    <img src="https://i.ytimg.com/vi/GWRSoPniVr0/maxresdefault.jpg">
+    <div class="video-title">Episode 67</div>
+</div>
+<div class="video-btn" data-video-id="Xrgkl6tD2Vc">
+    <img src="https://i.ytimg.com/vi/Xrgkl6tD2Vc/maxresdefault.jpg">
+    <div class="video-title">Episode 68</div>
+</div>
+<div class="video-btn" data-video-id="NsoaCTRJ4Ik">
+    <img src="https://i.ytimg.com/vi/NsoaCTRJ4Ik/maxresdefault.jpg">
+    <div class="video-title">Episode 69</div>
+</div>
+<div class="video-btn" data-video-id="WDGODKfkJaA">
+    <img src="https://i.ytimg.com/vi/WDGODKfkJaA/maxresdefault.jpg">
+    <div class="video-title">Episode 70</div>
+</div>
+<div class="video-btn" data-video-id="1O6SLCOcJAs">
+    <img src="https://i.ytimg.com/vi/1O6SLCOcJAs/maxresdefault.jpg">
+    <div class="video-title">Episode 71</div>
+</div>
+<div class="video-btn" data-video-id="mw-UHskOTTs">
+    <img src="https://i.ytimg.com/vi/mw-UHskOTTs/maxresdefault.jpg">
+    <div class="video-title">Episode 72</div>
+</div>
+<div class="video-btn" data-video-id="8w8TTKjbBxk">
+    <img src="https://i.ytimg.com/vi/8w8TTKjbBxk/maxresdefault.jpg">
+    <div class="video-title">Episode 73</div>
+</div>
+<div class="video-btn" data-video-id="cwJiOLJlf-I">
+    <img src="https://i.ytimg.com/vi/cwJiOLJlf-I/maxresdefault.jpg">
+    <div class="video-title">Episode 74</div>
+</div>
+<div class="video-btn" data-video-id="ewSs4yvbRyk">
+    <img src="https://i.ytimg.com/vi/ewSs4yvbRyk/maxresdefault.jpg">
+    <div class="video-title">Episode 75</div>
+</div>
+<div class="video-btn" data-video-id="0lj2tOVat0U">
+    <img src="https://i.ytimg.com/vi/0lj2tOVat0U/maxresdefault.jpg">
+    <div class="video-title">Episode 76</div>
+</div>
+<div class="video-btn" data-video-id="GkgeeImlJHA">
+    <img src="https://i.ytimg.com/vi/GkgeeImlJHA/maxresdefault.jpg">
+    <div class="video-title">Episode 77</div>
+</div>
+<div class="video-btn" data-video-id="OEX2bCnuZpc">
+    <img src="https://i.ytimg.com/vi/OEX2bCnuZpc/maxresdefault.jpg">
+    <div class="video-title">Episode 78</div>
+</div>
+<div class="video-btn" data-video-id="Z9B1PLS5W5A">
+    <img src="https://i.ytimg.com/vi/Z9B1PLS5W5A/maxresdefault.jpg">
+    <div class="video-title">Episode 79</div>
+</div>
+<div class="video-btn" data-video-id="FJwqiOfCXv8">
+    <img src="https://i.ytimg.com/vi/FJwqiOfCXv8/maxresdefault.jpg">
+    <div class="video-title">Episode 80</div>
+</div>
+<div class="video-btn" data-video-id="IR5MgMRC9RU">
+    <img src="https://i.ytimg.com/vi/IR5MgMRC9RU/maxresdefault.jpg">
+    <div class="video-title">Episode 81</div>
+</div>
+<div class="video-btn" data-video-id="FerEw46NZHY">
+    <img src="https://i.ytimg.com/vi/FerEw46NZHY/maxresdefault.jpg">
+    <div class="video-title">Episode 82</div>
+</div>
+<div class="video-btn" data-video-id="_1ofGiLLV1o">
+    <img src="https://i.ytimg.com/vi/_1ofGiLLV1o/maxresdefault.jpg">
+    <div class="video-title">Episode 83</div>
+</div>
+<div class="video-btn" data-video-id="y2Y0Ixl5Gao">
+    <img src="https://i.ytimg.com/vi/y2Y0Ixl5Gao/maxresdefault.jpg">
+    <div class="video-title">Episode 84</div>
+</div>
+<div class="video-btn" data-video-id="LJtRe3zVKqk">
+    <img src="https://i.ytimg.com/vi/LJtRe3zVKqk/maxresdefault.jpg">
+    <div class="video-title">Episode 85</div>
+</div>
+<div class="video-btn" data-video-id="2B5BoQe2MNw">
+    <img src="https://i.ytimg.com/vi/2B5BoQe2MNw/maxresdefault.jpg">
+    <div class="video-title">Episode 86</div>
+</div>
+<div class="video-btn" data-video-id="6dhZfQsg-H4">
+    <img src="https://i.ytimg.com/vi/6dhZfQsg-H4/maxresdefault.jpg">
+    <div class="video-title">Episode 87</div>
+</div>
+<div class="video-btn" data-video-id="fhChTBHfwe4">
+    <img src="https://i.ytimg.com/vi/fhChTBHfwe4/maxresdefault.jpg">
+    <div class="video-title">Episode 88</div>
+</div>
+<div class="video-btn" data-video-id="nRHUaXbkj4A">
+    <img src="https://i.ytimg.com/vi/nRHUaXbkj4A/maxresdefault.jpg">
+    <div class="video-title">Episode 89</div>
+</div>
+<div class="video-btn" data-video-id="LHn96At3BLk">
+    <img src="https://i.ytimg.com/vi/LHn96At3BLk/maxresdefault.jpg">
+    <div class="video-title">Episode 90</div>
+</div>
+<div class="video-btn" data-video-id="q6X5DbK1_qg">
+    <img src="https://i.ytimg.com/vi/q6X5DbK1_qg/maxresdefault.jpg">
+    <div class="video-title">Episode 91</div>
+</div>
+<div class="video-btn" data-video-id="dwIvInJCh9o">
+    <img src="https://i.ytimg.com/vi/dwIvInJCh9o/maxresdefault.jpg">
+    <div class="video-title">Episode 92</div>
+</div>
+<div class="video-btn" data-video-id="5KC3-cP9U0c">
+    <img src="https://i.ytimg.com/vi/5KC3-cP9U0c/maxresdefault.jpg">
+    <div class="video-title">Episode 93</div>
+</div>
+<div class="video-btn" data-video-id="sbQ4W0dZvSg">
+    <img src="https://i.ytimg.com/vi/sbQ4W0dZvSg/maxresdefault.jpg">
+    <div class="video-title">Episode 94</div>
+</div>
+<div class="video-btn" data-video-id="dSnwfsiU0v8">
+    <img src="https://i.ytimg.com/vi/dSnwfsiU0v8/maxresdefault.jpg">
+    <div class="video-title">Episode 95</div>
+</div>
+<div class="video-btn" data-video-id="wbohW420-9Q">
+    <img src="https://i.ytimg.com/vi/wbohW420-9Q/maxresdefault.jpg">
+    <div class="video-title">Episode 96</div>
+</div>
+<div class="video-btn" data-video-id="A4S-CZqjh6M">
+    <img src="https://i.ytimg.com/vi/A4S-CZqjh6M/maxresdefault.jpg">
+    <div class="video-title">Episode 97</div>
+</div>
+<div class="video-btn" data-video-id="Zo_db9dW4UQ">
+    <img src="https://i.ytimg.com/vi/Zo_db9dW4UQ/maxresdefault.jpg">
+    <div class="video-title">Episode 98</div>
+</div>
+<div class="video-btn" data-video-id="fxqLo1L7vdI">
+    <img src="https://i.ytimg.com/vi/fxqLo1L7vdI/maxresdefault.jpg">
+    <div class="video-title">Episode 99</div>
+</div>
+<div class="video-btn" data-video-id="D87S_tfljkA">
+    <img src="https://i.ytimg.com/vi/D87S_tfljkA/maxresdefault.jpg">
+    <div class="video-title">Episode 100</div>
+</div>
+<div class="video-btn" data-video-id="pwjqb5s9zWk">
+    <img src="https://i.ytimg.com/vi/pwjqb5s9zWk/maxresdefault.jpg">
+    <div class="video-title">Episode 101</div>
+</div>
+<div class="video-btn" data-video-id="coxgfMBZBwg">
+    <img src="https://i.ytimg.com/vi/coxgfMBZBwg/maxresdefault.jpg">
+    <div class="video-title">Episode 102</div>
+</div>
+<div class="video-btn" data-video-id="OIANJupfekg">
+    <img src="https://i.ytimg.com/vi/OIANJupfekg/maxresdefault.jpg">
+    <div class="video-title">Episode 103</div>
+</div>
+<div class="video-btn" data-video-id="aoh__uKcM5I">
+    <img src="https://i.ytimg.com/vi/aoh__uKcM5I/maxresdefault.jpg">
+    <div class="video-title">Episode 104</div>
+</div>
+<div class="video-btn" data-video-id="6FIEaiW7KGw">
+    <img src="https://i.ytimg.com/vi/6FIEaiW7KGw/maxresdefault.jpg">
+    <div class="video-title">Episode 105</div>
+</div>
+<div class="video-btn" data-video-id="YCt9tRiVBjw">
+    <img src="https://i.ytimg.com/vi/YCt9tRiVBjw/maxresdefault.jpg">
+    <div class="video-title">Episode 106</div>
+</div>
+<div class="video-btn" data-video-id="VlMY6kwQGnU">
+    <img src="https://i.ytimg.com/vi/VlMY6kwQGnU/maxresdefault.jpg">
+    <div class="video-title">Episode 107</div>
+</div>
+<div class="video-btn" data-video-id="0uS9RFBHMyQ">
+    <img src="https://i.ytimg.com/vi/0uS9RFBHMyQ/maxresdefault.jpg">
+    <div class="video-title">Episode 108</div>
+</div>
+<div class="video-btn" data-video-id="tHEU9jttQlA">
+    <img src="https://i.ytimg.com/vi/tHEU9jttQlA/maxresdefault.jpg">
+    <div class="video-title">Episode 109</div>
+</div>
+<div class="video-btn" data-video-id="37JVwypTaNY">
+    <img src="https://i.ytimg.com/vi/37JVwypTaNY/maxresdefault.jpg">
+    <div class="video-title">Episode 110</div>
+</div>
+<div class="video-btn" data-video-id="LD1RR1NZN4I">
+    <img src="https://i.ytimg.com/vi/LD1RR1NZN4I/maxresdefault.jpg">
+    <div class="video-title">Episode 111</div>
+</div>
+<div class="video-btn" data-video-id="qNqqbFdSl9A">
+    <img src="https://i.ytimg.com/vi/qNqqbFdSl9A/maxresdefault.jpg">
+    <div class="video-title">Episode 112</div>
+</div>
+<div class="video-btn" data-video-id="_0lo3NoBTm0">
+    <img src="https://i.ytimg.com/vi/_0lo3NoBTm0/maxresdefault.jpg">
+    <div class="video-title">Episode 113</div>
+</div>
+<div class="video-btn" data-video-id="uSTA4Rhjugo">
+    <img src="https://i.ytimg.com/vi/uSTA4Rhjugo/maxresdefault.jpg">
+    <div class="video-title">Episode 114</div>
+</div>
+<div class="video-btn" data-video-id="dr4jGXs_0dA">
+    <img src="https://i.ytimg.com/vi/dr4jGXs_0dA/maxresdefault.jpg">
+    <div class="video-title">Episode 115</div>
+</div>
+<div class="video-btn" data-video-id="YMGFtO27x-c">
+    <img src="https://i.ytimg.com/vi/YMGFtO27x-c/maxresdefault.jpg">
+    <div class="video-title">Episode 116</div>
+</div>
+<div class="video-btn" data-video-id="9U2ZgJhnInQ">
+    <img src="https://i.ytimg.com/vi/9U2ZgJhnInQ/maxresdefault.jpg">
+    <div class="video-title">Episode 117</div>
+</div>
+<div class="video-btn" data-video-id="-fPyI3OhfQE">
+    <img src="https://i.ytimg.com/vi/-fPyI3OhfQE/maxresdefault.jpg">
+    <div class="video-title">Episode 118</div>
+</div>
+<div class="video-btn" data-video-id="OyPTVj-hYNc">
+    <img src="https://i.ytimg.com/vi/OyPTVj-hYNc/maxresdefault.jpg">
+    <div class="video-title">Episode 119</div>
+</div>
+<div class="video-btn" data-video-id="M2v6uY6USF8">
+    <img src="https://i.ytimg.com/vi/M2v6uY6USF8/maxresdefault.jpg">
+    <div class="video-title">Episode 120</div>
+</div>
+<div class="video-btn" data-video-id="OZJwRwbujI4">
+    <img src="https://i.ytimg.com/vi/OZJwRwbujI4/maxresdefault.jpg">
+    <div class="video-title">Episode 121</div>
+</div>
+<div class="video-btn" data-video-id="wolfy7IFm6Y">
+    <img src="https://i.ytimg.com/vi/wolfy7IFm6Y/maxresdefault.jpg">
+    <div class="video-title">Episode 122</div>
+</div>
+<div class="video-btn" data-video-id="daiLioPsSNc">
+    <img src="https://i.ytimg.com/vi/daiLioPsSNc/maxresdefault.jpg">
+    <div class="video-title">Episode 123</div>
+</div>
+<div class="video-btn" data-video-id="l4x7_7oS5IY">
+    <img src="https://i.ytimg.com/vi/l4x7_7oS5IY/maxresdefault.jpg">
+    <div class="video-title">Episode 124</div>
+</div>
+<div class="video-btn" data-video-id="1boXc-Dgl30">
+    <img src="https://i.ytimg.com/vi/1boXc-Dgl30/maxresdefault.jpg">
+    <div class="video-title">Episode 125</div>
+</div>
+<div class="video-btn" data-video-id="P5H1Lv5mAK4">
+    <img src="https://i.ytimg.com/vi/P5H1Lv5mAK4/maxresdefault.jpg">
+    <div class="video-title">Episode 126</div>
+</div>
+<div class="video-btn" data-video-id="ZUcbT3FeaoY">
+    <img src="https://i.ytimg.com/vi/ZUcbT3FeaoY/maxresdefault.jpg">
+    <div class="video-title">Episode 127</div>
+</div>
+<div class="video-btn" data-video-id="vHHkVyHfEnc">
+    <img src="https://i.ytimg.com/vi/vHHkVyHfEnc/maxresdefault.jpg">
+    <div class="video-title">Episode 128</div>
+</div>
+<div class="video-btn" data-video-id="QpVOzmtXyYU">
+    <img src="https://i.ytimg.com/vi/QpVOzmtXyYU/maxresdefault.jpg">
+    <div class="video-title">Episode 129</div>
+</div>
+<div class="video-btn" data-video-id="Sys0PbaliU4">
+    <img src="https://i.ytimg.com/vi/Sys0PbaliU4/maxresdefault.jpg">
+    <div class="video-title">Episode 130</div>
+</div>
+<div class="video-btn" data-video-id="OyN6wyMT2Ik">
+    <img src="https://i.ytimg.com/vi/OyN6wyMT2Ik/maxresdefault.jpg">
+    <div class="video-title">Episode 131</div>
+</div>
+<div class="video-btn" data-video-id="Bce4R5rUIkM">
+    <img src="https://i.ytimg.com/vi/Bce4R5rUIkM/maxresdefault.jpg">
+    <div class="video-title">Episode 132</div>
+</div>
+<div class="video-btn" data-video-id="VHeJ8FLb5_Q">
+    <img src="https://i.ytimg.com/vi/VHeJ8FLb5_Q/maxresdefault.jpg">
+    <div class="video-title">Episode 133</div>
+</div>
+<div class="video-btn" data-video-id="eE_g31GeLDY">
+    <img src="https://i.ytimg.com/vi/eE_g31GeLDY/maxresdefault.jpg">
+    <div class="video-title">Episode 134</div>
+</div>
+<div class="video-btn" data-video-id="Jl0FHdyOEqc">
+    <img src="https://i.ytimg.com/vi/Jl0FHdyOEqc/maxresdefault.jpg">
+    <div class="video-title">Episode 135</div>
+</div>
+<div class="video-btn" data-video-id="DrAya0uq24o">
+    <img src="https://i.ytimg.com/vi/DrAya0uq24o/maxresdefault.jpg">
+    <div class="video-title">Episode 136</div>
+</div>
+<div class="video-btn" data-video-id="lr0c9viGR1w">
+    <img src="https://i.ytimg.com/vi/lr0c9viGR1w/maxresdefault.jpg">
+    <div class="video-title">Episode 137</div>
+</div>
+<div class="video-btn" data-video-id="He4iLo2gJ0U">
+    <img src="https://i.ytimg.com/vi/He4iLo2gJ0U/maxresdefault.jpg">
+    <div class="video-title">Episode 138</div>
+</div>
+<div class="video-btn" data-video-id="nuianKFQCeY">
+    <img src="https://i.ytimg.com/vi/nuianKFQCeY/maxresdefault.jpg">
+    <div class="video-title">Episode 139</div>
+</div>
+<div class="video-btn" data-video-id="f50c9Vuzruo">
+    <img src="https://i.ytimg.com/vi/f50c9Vuzruo/maxresdefault.jpg">
+    <div class="video-title">Episode 140</div>
+</div>
+<div class="video-btn" data-video-id="_EHVsItw6EM">
+    <img src="https://i.ytimg.com/vi/_EHVsItw6EM/maxresdefault.jpg">
+    <div class="video-title">Episode 141</div>
+</div>
+<div class="video-btn" data-video-id="dTgjCx8l5v0">
+    <img src="https://i.ytimg.com/vi/dTgjCx8l5v0/maxresdefault.jpg">
+    <div class="video-title">Episode 142</div>
+</div>
+<div class="video-btn" data-video-id="7CN5tZnDPQc">
+    <img src="https://i.ytimg.com/vi/7CN5tZnDPQc/maxresdefault.jpg">
+    <div class="video-title">Episode 143</div>
+</div>
+<div class="video-btn" data-video-id="y4zdnrmWeYE">
+    <img src="https://i.ytimg.com/vi/y4zdnrmWeYE/maxresdefault.jpg">
+    <div class="video-title">Episode 144</div>
+</div>
+<div class="video-btn" data-video-id="BcNht_g8REs">
+    <img src="https://i.ytimg.com/vi/BcNht_g8REs/maxresdefault.jpg">
+    <div class="video-title">Episode 145</div>
+</div>
+<div class="video-btn" data-video-id="6hz0Xod0F3U">
+    <img src="https://i.ytimg.com/vi/6hz0Xod0F3U/maxresdefault.jpg">
+    <div class="video-title">Episode 146</div>
+</div>
+<div class="video-btn" data-video-id="oTx_CLIycOE">
+    <img src="https://i.ytimg.com/vi/oTx_CLIycOE/maxresdefault.jpg">
+    <div class="video-title">Episode 147</div>
+</div>
+<div class="video-btn" data-video-id="bJkzFLLHsGw">
+    <img src="https://i.ytimg.com/vi/bJkzFLLHsGw/maxresdefault.jpg">
+    <div class="video-title">Episode 148</div>
+</div>
+<div class="video-btn" data-video-id="9_NjrHP4Xmk">
+    <img src="https://i.ytimg.com/vi/9_NjrHP4Xmk/maxresdefault.jpg">
+    <div class="video-title">Episode 149</div>
+</div>
+<div class="video-btn" data-video-id="-54hb0D8ah8">
+    <img src="https://i.ytimg.com/vi/-54hb0D8ah8/maxresdefault.jpg">
+    <div class="video-title">Episode 150</div>
+</div>
+<div class="video-btn" data-video-id="vJp9Wl-84xM">
+    <img src="https://i.ytimg.com/vi/vJp9Wl-84xM/maxresdefault.jpg">
+    <div class="video-title">Episode 151</div>
+</div>
+<div class="video-btn" data-video-id="qrSBqfVNP7E">
+    <img src="https://i.ytimg.com/vi/qrSBqfVNP7E/maxresdefault.jpg">
+    <div class="video-title">Episode 152</div>
+</div>
+<div class="video-btn" data-video-id="QdKlY6-fdik">
+    <img src="https://i.ytimg.com/vi/QdKlY6-fdik/maxresdefault.jpg">
+    <div class="video-title">Episode 153</div>
+</div>
+<div class="video-btn" data-video-id="dvC9kNiYwEk">
+    <img src="https://i.ytimg.com/vi/dvC9kNiYwEk/maxresdefault.jpg">
+    <div class="video-title">Episode 154</div>
+</div>
+<div class="video-btn" data-video-id="6p-jiep6W2s">
+    <img src="https://i.ytimg.com/vi/6p-jiep6W2s/maxresdefault.jpg">
+    <div class="video-title">Episode 155</div>
+</div>
+<div class="video-btn" data-video-id="UP7PBDveQNg">
+    <img src="https://i.ytimg.com/vi/UP7PBDveQNg/maxresdefault.jpg">
+    <div class="video-title">Episode 156</div>
+</div>
+<div class="video-btn" data-video-id="dqejonnRkGM">
+    <img src="https://i.ytimg.com/vi/dqejonnRkGM/maxresdefault.jpg">
+    <div class="video-title">Episode 157</div>
+</div>
+<div class="video-btn" data-video-id="2ESoWF2wjiU">
+    <img src="https://i.ytimg.com/vi/2ESoWF2wjiU/maxresdefault.jpg">
+    <div class="video-title">Episode 158</div>
+</div>
+<div class="video-btn" data-video-id="r_yRHL-B7nY">
+    <img src="https://i.ytimg.com/vi/r_yRHL-B7nY/maxresdefault.jpg">
+    <div class="video-title">Episode 159</div>
+</div>
+<div class="video-btn" data-video-id="vUiIH08F5Ao">
+    <img src="https://i.ytimg.com/vi/vUiIH08F5Ao/maxresdefault.jpg">
+    <div class="video-title">Episode 160</div>
+</div>
+<div class="video-btn" data-video-id="Y8r_yYHeJFA">
+    <img src="https://i.ytimg.com/vi/Y8r_yYHeJFA/maxresdefault.jpg">
+    <div class="video-title">Episode 161</div>
+</div>
+<div class="video-btn" data-video-id="jq_gfWvA5NM">
+    <img src="https://i.ytimg.com/vi/jq_gfWvA5NM/maxresdefault.jpg">
+    <div class="video-title">Episode 162</div>
+</div>
+<div class="video-btn" data-video-id="2fPOgy7sZz0">
+    <img src="https://i.ytimg.com/vi/2fPOgy7sZz0/maxresdefault.jpg">
+    <div class="video-title">Episode 163</div>
+</div>
+<div class="video-btn" data-video-id="QZDjdCLRjFs">
+    <img src="https://i.ytimg.com/vi/QZDjdCLRjFs/maxresdefault.jpg">
+    <div class="video-title">Episode 164</div>
+</div>
+<div class="video-btn" data-video-id="7mi1ZxD_324">
+    <img src="https://i.ytimg.com/vi/7mi1ZxD_324/maxresdefault.jpg">
+    <div class="video-title">Episode 165</div>
+</div>
+<div class="video-btn" data-video-id="8wuNp4Wj5nc">
+    <img src="https://i.ytimg.com/vi/8wuNp4Wj5nc/maxresdefault.jpg">
+    <div class="video-title">Episode 166</div>
+</div>
+<div class="video-btn" data-video-id="Z70-F0TyVtE">
+    <img src="https://i.ytimg.com/vi/Z70-F0TyVtE/maxresdefault.jpg">
+    <div class="video-title">Episode 167</div>
+</div>
+<div class="video-btn" data-video-id="BqnUMJXRu3I">
+    <img src="https://i.ytimg.com/vi/BqnUMJXRu3I/maxresdefault.jpg">
+    <div class="video-title">Episode 168</div>
+</div>
+<div class="video-btn" data-video-id="NolkL8za_HY">
+    <img src="https://i.ytimg.com/vi/NolkL8za_HY/maxresdefault.jpg">
+    <div class="video-title">Episode 169</div>
+</div>
+<div class="video-btn" data-video-id="cwLVeI3lgqU">
+    <img src="https://i.ytimg.com/vi/cwLVeI3lgqU/maxresdefault.jpg">
+    <div class="video-title">Episode 170</div>
+</div>
+<div class="video-btn" data-video-id="WfR4mlgX0-8">
+    <img src="https://i.ytimg.com/vi/WfR4mlgX0-8/maxresdefault.jpg">
+    <div class="video-title">Episode 171</div>
+</div>
+<div class="video-btn" data-video-id="0eteHtYNfwk">
+    <img src="https://i.ytimg.com/vi/0eteHtYNfwk/maxresdefault.jpg">
+    <div class="video-title">Episode 172</div>
+</div>
+<div class="video-btn" data-video-id="MMaeRZucj1s">
+    <img src="https://i.ytimg.com/vi/MMaeRZucj1s/maxresdefault.jpg">
+    <div class="video-title">Episode 173</div>
+</div>
+<div class="video-btn" data-video-id="VAHEyxqUlYc">
+    <img src="https://i.ytimg.com/vi/VAHEyxqUlYc/maxresdefault.jpg">
+    <div class="video-title">Episode 174</div>
+</div>
+<div class="video-btn" data-video-id="R3LlsmZIMeQ">
+    <img src="https://i.ytimg.com/vi/R3LlsmZIMeQ/maxresdefault.jpg">
+    <div class="video-title">Episode 175</div>
+</div>
+<div class="video-btn" data-video-id="cRnGTaq7wls">
+    <img src="https://i.ytimg.com/vi/cRnGTaq7wls/maxresdefault.jpg">
+    <div class="video-title">Episode 176</div>
+</div>
+<div class="video-btn" data-video-id="VYil8hxjD9I">
+    <img src="https://i.ytimg.com/vi/VYil8hxjD9I/maxresdefault.jpg">
+    <div class="video-title">Episode 177</div>
+</div>
+<div class="video-btn" data-video-id="e3xBabweO7I">
+    <img src="https://i.ytimg.com/vi/e3xBabweO7I/maxresdefault.jpg">
+    <div class="video-title">Episode 178</div>
+</div>
+<div class="video-btn" data-video-id="YkMrQG_FMEc">
+    <img src="https://i.ytimg.com/vi/YkMrQG_FMEc/maxresdefault.jpg">
+    <div class="video-title">Episode 179</div>
+</div>
+<div class="video-btn" data-video-id="RcnkaEuB2z4">
+    <img src="https://i.ytimg.com/vi/RcnkaEuB2z4/maxresdefault.jpg">
+    <div class="video-title">Episode 180</div>
+</div>
+<div class="video-btn" data-video-id="gqn6gTQKJz4">
+    <img src="https://i.ytimg.com/vi/gqn6gTQKJz4/maxresdefault.jpg">
+    <div class="video-title">Episode 181</div>
+</div>
+<div class="video-btn" data-video-id="DHEvsnpFJqM">
+    <img src="https://i.ytimg.com/vi/DHEvsnpFJqM/maxresdefault.jpg">
+    <div class="video-title">Episode 182</div>
+</div>
+<div class="video-btn" data-video-id="N7q68TIrALk">
+    <img src="https://i.ytimg.com/vi/N7q68TIrALk/maxresdefault.jpg">
+    <div class="video-title">Episode 183</div>
+</div>
+<div class="video-btn" data-video-id="etZnhj9a9ZM">
+    <img src="https://i.ytimg.com/vi/etZnhj9a9ZM/maxresdefault.jpg">
+    <div class="video-title">Episode 184</div>
+</div>
+<div class="video-btn" data-video-id="0JEOGriOqpM">
+    <img src="https://i.ytimg.com/vi/0JEOGriOqpM/maxresdefault.jpg">
+    <div class="video-title">Episode 185</div>
+</div>
+<div class="video-btn" data-video-id="qT8c4gayJC0">
+    <img src="https://i.ytimg.com/vi/qT8c4gayJC0/maxresdefault.jpg">
+    <div class="video-title">Episode 186</div>
+</div>
+<div class="video-btn" data-video-id="tz7u3G-PBj8">
+    <img src="https://i.ytimg.com/vi/tz7u3G-PBj8/maxresdefault.jpg">
+    <div class="video-title">Episode 187</div>
+</div>
+<div class="video-btn" data-video-id="ONx9S6zC2Po">
+    <img src="https://i.ytimg.com/vi/ONx9S6zC2Po/maxresdefault.jpg">
+    <div class="video-title">Episode 188</div>
+</div>
+<div class="video-btn" data-video-id="u0Febmfmtp8">
+    <img src="https://i.ytimg.com/vi/u0Febmfmtp8/maxresdefault.jpg">
+    <div class="video-title">Episode 189</div>
+</div>
+<div class="video-btn" data-video-id="C0vBqK2Yqpk">
+    <img src="https://i.ytimg.com/vi/C0vBqK2Yqpk/maxresdefault.jpg">
+    <div class="video-title">Episode 190</div>
+</div>
+<div class="video-btn" data-video-id="k8APkPRZ71Q">
+    <img src="https://i.ytimg.com/vi/k8APkPRZ71Q/maxresdefault.jpg">
+    <div class="video-title">Episode 191</div>
+</div>
+<div class="video-btn" data-video-id="u7DBFUwNKFM">
+    <img src="https://i.ytimg.com/vi/u7DBFUwNKFM/maxresdefault.jpg">
+    <div class="video-title">Episode 192</div>
+</div>
+<div class="video-btn" data-video-id="pk4Wys2oT3M">
+    <img src="https://i.ytimg.com/vi/pk4Wys2oT3M/maxresdefault.jpg">
+    <div class="video-title">Episode 193</div>
+</div>
+<div class="video-btn" data-video-id="2pTm1jGadhY">
+    <img src="https://i.ytimg.com/vi/2pTm1jGadhY/maxresdefault.jpg">
+    <div class="video-title">Episode 194</div>
+</div>
+<div class="video-btn" data-video-id="R_2Ew4HfOg4">
+    <img src="https://i.ytimg.com/vi/R_2Ew4HfOg4/maxresdefault.jpg">
+    <div class="video-title">Episode 195</div>
+</div>
+<div class="video-btn" data-video-id="HcEqheudGGE">
+    <img src="https://i.ytimg.com/vi/HcEqheudGGE/maxresdefault.jpg">
+    <div class="video-title">Episode 196</div>
+</div>
+<div class="video-btn" data-video-id="zi-Cs7GtLpQ">
+    <img src="https://i.ytimg.com/vi/zi-Cs7GtLpQ/maxresdefault.jpg">
+    <div class="video-title">Episode 197</div>
+</div>
+<div class="video-btn" data-video-id="aTHmD-RmMYU">
+    <img src="https://i.ytimg.com/vi/aTHmD-RmMYU/maxresdefault.jpg">
+    <div class="video-title">Episode 198</div>
+</div>
+<div class="video-btn" data-video-id="jkC6WLWAea4">
+    <img src="https://i.ytimg.com/vi/jkC6WLWAea4/maxresdefault.jpg">
+    <div class="video-title">Episode 199</div>
+</div>
+<div class="video-btn" data-video-id="0vgVgR3grpo">
+    <img src="https://i.ytimg.com/vi/0vgVgR3grpo/maxresdefault.jpg">
+    <div class="video-title">Episode 200</div>
+</div>
+<div class="video-btn" data-video-id="gFZquuEvOik">
+    <img src="https://i.ytimg.com/vi/gFZquuEvOik/maxresdefault.jpg">
+    <div class="video-title">Episode 201</div>
+</div>
+<div class="video-btn" data-video-id="tEl2AUBUVMk">
+    <img src="https://i.ytimg.com/vi/tEl2AUBUVMk/maxresdefault.jpg">
+    <div class="video-title">Episode 202</div>
+</div>
+<div class="video-btn" data-video-id="Yzq1JNx0EPM">
+    <img src="https://i.ytimg.com/vi/Yzq1JNx0EPM/maxresdefault.jpg">
+    <div class="video-title">Episode 203</div>
+</div>
+<div class="video-btn" data-video-id="S5Knl5LhIV8">
+    <img src="https://i.ytimg.com/vi/S5Knl5LhIV8/maxresdefault.jpg">
+    <div class="video-title">Episode 204</div>
+</div>
+<div class="video-btn" data-video-id="kVeEZo54uZY">
+    <img src="https://i.ytimg.com/vi/kVeEZo54uZY/maxresdefault.jpg">
+    <div class="video-title">Episode 205</div>
+</div>
+<div class="video-btn" data-video-id="4yiJ1ECzYcU">
+    <img src="https://i.ytimg.com/vi/4yiJ1ECzYcU/maxresdefault.jpg">
+    <div class="video-title">Episode 206</div>
+</div>
+<div class="video-btn" data-video-id="GrmRHkm5uEA">
+    <img src="https://i.ytimg.com/vi/GrmRHkm5uEA/maxresdefault.jpg">
+    <div class="video-title">Episode 207</div>
+</div>
+<div class="video-btn" data-video-id="1xa4eSrLvRg">
+    <img src="https://i.ytimg.com/vi/1xa4eSrLvRg/maxresdefault.jpg">
+    <div class="video-title">Episode 208</div>
+</div>
+<div class="video-btn" data-video-id="qSRM5Q7qk6U">
+    <img src="https://i.ytimg.com/vi/qSRM5Q7qk6U/maxresdefault.jpg">
+    <div class="video-title">Episode 209</div>
+</div>
+<div class="video-btn" data-video-id="QmQHEX9_V7s">
+    <img src="https://i.ytimg.com/vi/QmQHEX9_V7s/maxresdefault.jpg">
+    <div class="video-title">Episode 210</div>
+</div>
+<div class="video-btn" data-video-id="F4SkWvOjLmg">
+    <img src="https://i.ytimg.com/vi/F4SkWvOjLmg/maxresdefault.jpg">
+    <div class="video-title">Episode 211</div>
+</div>
+<div class="video-btn" data-video-id="v84iiy73FQQ">
+    <img src="https://i.ytimg.com/vi/v84iiy73FQQ/maxresdefault.jpg">
+    <div class="video-title">Episode 212</div>
+</div>
+<div class="video-btn" data-video-id="gsJiapdM0_E">
+    <img src="https://i.ytimg.com/vi/gsJiapdM0_E/maxresdefault.jpg">
+    <div class="video-title">Episode 213</div>
+</div>
+<div class="video-btn" data-video-id="6Ft8B9HpAgo">
+    <img src="https://i.ytimg.com/vi/6Ft8B9HpAgo/maxresdefault.jpg">
+    <div class="video-title">Episode 214</div>
+</div>
+<div class="video-btn" data-video-id="9aYON-DYyZ4">
+    <img src="https://i.ytimg.com/vi/9aYON-DYyZ4/maxresdefault.jpg">
+    <div class="video-title">Episode 215</div>
+</div>
+<div class="video-btn" data-video-id="u3hzJ9Hn4rs">
+    <img src="https://i.ytimg.com/vi/u3hzJ9Hn4rs/maxresdefault.jpg">
+    <div class="video-title">Episode 216</div>
+</div>
+<div class="video-btn" data-video-id="VEZH_nRfATs">
+    <img src="https://i.ytimg.com/vi/VEZH_nRfATs/maxresdefault.jpg">
+    <div class="video-title">Episode 217</div>
+</div>
+<div class="video-btn" data-video-id="wymJOgmrWQ8">
+    <img src="https://i.ytimg.com/vi/wymJOgmrWQ8/maxresdefault.jpg">
+    <div class="video-title">Episode 218</div>
+</div>
+<div class="video-btn" data-video-id="xohVnltcsro">
+    <img src="https://i.ytimg.com/vi/xohVnltcsro/maxresdefault.jpg">
+    <div class="video-title">Episode 219</div>
+</div>
+<div class="video-btn" data-video-id="A6qQteXrHQA">
+    <img src="https://i.ytimg.com/vi/A6qQteXrHQA/maxresdefault.jpg">
+    <div class="video-title">Episode 220</div>
+</div>
+<div class="video-btn" data-video-id="bTTv5BqTccI">
+    <img src="https://i.ytimg.com/vi/bTTv5BqTccI/maxresdefault.jpg">
+    <div class="video-title">Episode 221</div>
+</div>
+<div class="video-btn" data-video-id="1NanzO2dQow">
+    <img src="https://i.ytimg.com/vi/1NanzO2dQow/maxresdefault.jpg">
+    <div class="video-title">Episode 222</div>
+</div>
+<div class="video-btn" data-video-id="DbLNJwuLSqo">
+    <img src="https://i.ytimg.com/vi/DbLNJwuLSqo/maxresdefault.jpg">
+    <div class="video-title">Episode 223</div>
+</div>
+<div class="video-btn" data-video-id="dC_-rDR9drY">
+    <img src="https://i.ytimg.com/vi/dC_-rDR9drY/maxresdefault.jpg">
+    <div class="video-title">Episode 224</div>
+</div>
+<div class="video-btn" data-video-id="GyEHnkxIRqU">
+    <img src="https://i.ytimg.com/vi/GyEHnkxIRqU/maxresdefault.jpg">
+    <div class="video-title">Episode 225</div>
+</div>
+<div class="video-btn" data-video-id="Mp9Rw07opKs">
+    <img src="https://i.ytimg.com/vi/Mp9Rw07opKs/maxresdefault.jpg">
+    <div class="video-title">Episode 226</div>
+</div>
+<div class="video-btn" data-video-id="JHOsI2JwVlM">
+    <img src="https://i.ytimg.com/vi/JHOsI2JwVlM/maxresdefault.jpg">
+    <div class="video-title">Episode 227</div>
+</div>
+<div class="video-btn" data-video-id="H044D6yuhg0">
+    <img src="https://i.ytimg.com/vi/H044D6yuhg0/maxresdefault.jpg">
+    <div class="video-title">Episode 228</div>
+</div>
+<div class="video-btn" data-video-id="Vo9qMJ8Vnb8">
+    <img src="https://i.ytimg.com/vi/Vo9qMJ8Vnb8/maxresdefault.jpg">
+    <div class="video-title">Episode 229</div>
+</div>
+<div class="video-btn" data-video-id="cYEPoBQ2Z3I">
+    <img src="https://i.ytimg.com/vi/cYEPoBQ2Z3I/maxresdefault.jpg">
+    <div class="video-title">Episode 230</div>
+</div>
+<div class="video-btn" data-video-id="U7Kws6BWsKE">
+    <img src="https://i.ytimg.com/vi/U7Kws6BWsKE/maxresdefault.jpg">
+    <div class="video-title">Episode 231</div>
+</div>
+<div class="video-btn" data-video-id="qt8xTO8WfqA">
+    <img src="https://i.ytimg.com/vi/qt8xTO8WfqA/maxresdefault.jpg">
+    <div class="video-title">Episode 232</div>
+</div>
+<div class="video-btn" data-video-id="GhMwFyl-3FQ">
+    <img src="https://i.ytimg.com/vi/GhMwFyl-3FQ/maxresdefault.jpg">
+    <div class="video-title">Episode 233</div>
+</div>
+<div class="video-btn" data-video-id="XasXYCae-44">
+    <img src="https://i.ytimg.com/vi/XasXYCae-44/maxresdefault.jpg">
+    <div class="video-title">Episode 234</div>
+</div>
+<div class="video-btn" data-video-id="Ug02TbLYHb0">
+    <img src="https://i.ytimg.com/vi/Ug02TbLYHb0/maxresdefault.jpg">
+    <div class="video-title">Episode 235</div>
+</div>
+<div class="video-btn" data-video-id="hIha4tlxImE">
+    <img src="https://i.ytimg.com/vi/hIha4tlxImE/maxresdefault.jpg">
+    <div class="video-title">Episode 236</div>
+</div>
+<div class="video-btn" data-video-id="l5AAqoHdK3k">
+    <img src="https://i.ytimg.com/vi/l5AAqoHdK3k/maxresdefault.jpg">
+    <div class="video-title">Episode 237</div>
+</div>
+<div class="video-btn" data-video-id="o1-JZQcVoXo">
+    <img src="https://i.ytimg.com/vi/o1-JZQcVoXo/maxresdefault.jpg">
+    <div class="video-title">Episode 238</div>
+</div>
+<div class="video-btn" data-video-id="DdthKV48dDg">
+    <img src="https://i.ytimg.com/vi/DdthKV48dDg/maxresdefault.jpg">
+    <div class="video-title">Episode 239</div>
+</div>
+<div class="video-btn" data-video-id="vLtvPAtb6I8">
+    <img src="https://i.ytimg.com/vi/vLtvPAtb6I8/maxresdefault.jpg">
+    <div class="video-title">Episode 240</div>
+</div>
+<div class="video-btn" data-video-id="wfPJJB3varI">
+    <img src="https://i.ytimg.com/vi/wfPJJB3varI/maxresdefault.jpg">
+    <div class="video-title">Episode 241</div>
+</div>
+<div class="video-btn" data-video-id="Rw51wrP24XE">
+    <img src="https://i.ytimg.com/vi/Rw51wrP24XE/maxresdefault.jpg">
+    <div class="video-title">Episode 242</div>
+</div>
+<div class="video-btn" data-video-id="IhRkIBLnfEQ">
+    <img src="https://i.ytimg.com/vi/IhRkIBLnfEQ/maxresdefault.jpg">
+    <div class="video-title">Episode 243</div>
+</div>
+<div class="video-btn" data-video-id="gAJVuNo3fUY">
+    <img src="https://i.ytimg.com/vi/gAJVuNo3fUY/maxresdefault.jpg">
+    <div class="video-title">Episode 244</div>
+</div>
+<div class="video-btn" data-video-id="EGBpLviDnSU">
+    <img src="https://i.ytimg.com/vi/EGBpLviDnSU/maxresdefault.jpg">
+    <div class="video-title">Last Episode</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+         
+            </div>
+        </div>
+        
+        <!-- Copyright section -->
+        <div class="copyright-section">
+            <div class="copyright-footer">
+                <span class="copyright-year">Powerd By: 🩷~𝑺𝒚𝒆𝒅 𝑴𝒖𝒛𝒂𝒎𝒎𝒊𝒍 𝑺𝒉𝒂𝒉~🩷</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Your existing JavaScript code remains the same...
+        // YouTube API setup
+        let player;
+        let isPlaying = false;
+        let isMuted = false;
+        let currentVolume = 50;
+        let isFullscreen = false;
+        let isTheaterMode = false;
+        let currentPlaybackRate = 1;
+        let currentVideoId = 'H_TYjniZIp0'; // Default video
+        let currentQuality = 'default';
+        let currentTime = 0;
+        let controlsTimeout;
+        let controlsVisible = false;
+
+        // Load YouTube IFrame API
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        // Initialize player when API is ready
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: currentVideoId,
+                playerVars: {
+                    'playsinline': 1,
+                    'controls': 0,
+                    'rel': 0,
+                    'modestbranding': 1,
+                    'autoplay': 1 // Enable autoplay
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        // When player is ready
+        function onPlayerReady(event) {
+            updateTimeDisplay();
+            setInterval(updateProgressBar, 500);
+            document.getElementById('volume-slider').value = currentVolume;
+            
+            // Get available quality levels
+            getAvailableQualities();
+            
+            // Hide loader when video is ready
+            setTimeout(() => {
+                document.getElementById('neon-loader').classList.add('hidden');
+            }, 1000);
+            
+            // Start autoplay
+            player.playVideo();
+            
+            // Hide controls after 3 seconds
+            hideControls();
+        }
+
+        // Handle player state changes
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.PLAYING) {
+                isPlaying = true;
+                document.getElementById('play-pause').innerHTML = '<i>⏸</i>';
+            } else {
+                isPlaying = false;
+                document.getElementById('play-pause').innerHTML = '<i>▶</i>';
+            }
+            
+            // Save current time when video is paused or ended
+            if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+                currentTime = player.getCurrentTime();
+            }
+        }
+
+        // Update progress bar
+        function updateProgressBar() {
+            if (player && player.getDuration) {
+                const currentTime = player.getCurrentTime();
+                const duration = player.getDuration();
+                const progress = (currentTime / duration) * 100;
+                
+                document.getElementById('progress-bar').style.width = `${progress}%`;
+                updateTimeDisplay();
+            }
+        }
+
+        // Update time display
+        function updateTimeDisplay() {
+            if (player && player.getDuration) {
+                const currentTime = player.getCurrentTime();
+                const duration = player.getDuration();
+                
+                document.getElementById('current-time').textContent = formatTime(currentTime);
+                document.getElementById('duration').textContent = formatTime(duration);
+            }
+        }
+
+        // Format time in MM:SS
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        // Play/Pause button
+        document.getElementById('play-pause').addEventListener('click', function() {
+            if (isPlaying) {
+                player.pauseVideo();
+            } else {
+                player.playVideo();
+            }
+            showControlsTemporarily();
+        });
+
+        // Mute/Unmute button
+        document.getElementById('mute-unmute').addEventListener('click', function() {
+            if (isMuted) {
+                player.unMute();
+                document.getElementById('mute-unmute').innerHTML = '<i>🔊</i>';
+                isMuted = false;
+            } else {
+                player.mute();
+                document.getElementById('mute-unmute').innerHTML = '<i>🔇</i>';
+                isMuted = true;
+            }
+            showControlsTemporarily();
+        });
+
+        // Volume slider
+        document.getElementById('volume-slider').addEventListener('input', function() {
+            currentVolume = this.value;
+            player.setVolume(currentVolume);
+            
+            if (currentVolume == 0) {
+                document.getElementById('mute-unmute').innerHTML = '<i>🔇</i>';
+                isMuted = true;
+            } else {
+                document.getElementById('mute-unmute').innerHTML = '<i>🔊</i>';
+                isMuted = false;
+            }
+            showControlsTemporarily();
+        });
+
+        // Progress bar click to seek
+        document.querySelector('.progress-container').addEventListener('click', function(e) {
+            const rect = this.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            const duration = player.getDuration();
+            const newTime = percent * duration;
+            
+            player.seekTo(newTime, true);
+            showControlsTemporarily();
+        });
+
+        // Fullscreen functionality
+        document.getElementById('fullscreen-btn').addEventListener('click', function() {
+            const playerContainer = document.querySelector('.player-container');
+            
+            if (!isFullscreen) {
+                if (playerContainer.requestFullscreen) {
+                    playerContainer.requestFullscreen();
+                } else if (playerContainer.webkitRequestFullscreen) {
+                    playerContainer.webkitRequestFullscreen();
+                } else if (playerContainer.msRequestFullscreen) {
+                    playerContainer.msRequestFullscreen();
+                }
+                
+                // Rotate to landscape on mobile
+                if (window.screen.orientation && window.screen.orientation.lock) {
+                    window.screen.orientation.lock('landscape').catch(function(error) {
+                        console.log('Orientation lock failed: ', error);
+                    });
+                }
+                
+                isFullscreen = true;
+                document.getElementById('fullscreen-btn').innerHTML = '<i>⛶</i>';
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+                
+                // Rotate back to portrait on mobile
+                if (window.screen.orientation && window.screen.orientation.unlock) {
+                    window.screen.orientation.unlock();
+                }
+                
+                isFullscreen = false;
+                document.getElementById('fullscreen-btn').innerHTML = '<i>⛶</i>';
+            }
+            showControlsTemporarily();
+        });
+
+        // Listen for fullscreen change events
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('msfullscreenchange', handleFullscreenChange);
+
+        function handleFullscreenChange() {
+            isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+        }
+
+        // Playback speed controls
+        document.querySelectorAll('.dropdown-content button[data-speed]').forEach(button => {
+            button.addEventListener('click', function() {
+                const speed = parseFloat(this.getAttribute('data-speed'));
+                player.setPlaybackRate(speed);
+                currentPlaybackRate = speed;
+                document.getElementById('current-speed').textContent = speed + 'x';
+                
+                // Update active state
+                document.querySelectorAll('.dropdown-content button[data-speed]').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+                showControlsTemporarily();
+            });
+        });
+
+        // Quality controls
+        document.querySelectorAll('#quality-dropdown button[data-quality]').forEach(button => {
+            button.addEventListener('click', function() {
+                const quality = this.getAttribute('data-quality');
+                changeQuality(quality);
+                showControlsTemporarily();
+            });
+        });
+
+        // Video selection buttons
+        document.querySelectorAll('.video-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const videoId = this.getAttribute('data-video-id');
+                changeVideo(videoId);
+                
+                // Update active state
+                document.querySelectorAll('.video-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+
+        // Function to change video
+        function changeVideo(videoId) {
+            // Show loader when changing video
+            document.getElementById('neon-loader').classList.remove('hidden');
+            
+            // Save current time before changing video
+            currentTime = 0;
+            currentVideoId = videoId;
+            
+            // Load new video
+            player.loadVideoById(videoId);
+            
+            // Hide loader when video is ready
+            setTimeout(() => {
+                document.getElementById('neon-loader').classList.add('hidden');
+            }, 1500);
+        }
+
+        // Function to change video quality
+        function changeQuality(quality) {
+            // Show loader when changing quality
+            document.getElementById('neon-loader').classList.remove('hidden');
+            
+            // Save current time before reloading
+            currentTime = player.getCurrentTime();
+            currentQuality = quality;
+            
+            // Update UI
+            document.getElementById('current-quality').textContent = 
+                quality === 'default' ? 'Auto' : 
+                quality === 'hd1080' ? '1080p' :
+                quality === 'hd720' ? '720p' :
+                quality === 'large' ? '480p' :
+                quality === 'medium' ? '360p' : '240p';
+            
+            // Update active state
+            document.querySelectorAll('#quality-dropdown button[data-quality]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`#quality-dropdown button[data-quality="${quality}"]`).classList.add('active');
+            
+            // Reload player with new quality
+            reloadPlayerWithQuality(quality);
+        }
+
+        // Function to reload player with specific quality
+        function reloadPlayerWithQuality(quality) {
+            // Store current state
+            const wasPlaying = isPlaying;
+            
+            // Destroy current player
+            player.destroy();
+            
+            // Create new player with quality parameter
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: currentVideoId,
+                playerVars: {
+                    'playsinline': 1,
+                    'controls': 0,
+                    'rel': 0,
+                    'modestbranding': 1,
+                    'vq': quality === 'default' ? undefined : quality,
+                    'autoplay': 1 // Enable autoplay
+                },
+                events: {
+                    'onReady': function(event) {
+                        onPlayerReady(event);
+                        
+                        // Restore previous state
+                        player.setVolume(currentVolume);
+                        player.setPlaybackRate(currentPlaybackRate);
+                        
+                        if (wasPlaying) {
+                            player.playVideo();
+                        }
+                        
+                        // Seek to saved time
+                        player.seekTo(currentTime, true);
+                        
+                        // Hide loader
+                        setTimeout(() => {
+                            document.getElementById('neon-loader').classList.add('hidden');
+                        }, 1000);
+                    },
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        // Function to get available qualities (for future enhancement)
+        function getAvailableQualities() {
+            // Note: The YouTube API doesn't provide a direct way to get available qualities
+            // This is a limitation of the IFrame API
+            console.log("Available qualities cannot be directly retrieved via the YouTube API");
+        }
+
+        // Auto-hide controls functionality
+        function hideControls() {
+            const playerContainer = document.querySelector('.player-container');
+            playerContainer.classList.remove('show-controls');
+            controlsVisible = false;
+        }
+
+        function showControls() {
+            const playerContainer = document.querySelector('.player-container');
+            playerContainer.classList.add('show-controls');
+            controlsVisible = true;
+        }
+
+        function toggleControls() {
+            if (controlsVisible) {
+                hideControls();
+            } else {
+                showControls();
+                // Auto-hide after 3 seconds
+                clearTimeout(controlsTimeout);
+                controlsTimeout = setTimeout(hideControls, 3000);
+            }
+        }
+
+        function showControlsTemporarily() {
+            showControls();
+            
+            // Clear existing timeout
+            clearTimeout(controlsTimeout);
+            
+            // Set new timeout to hide controls after 3 seconds
+            controlsTimeout = setTimeout(hideControls, 3000);
+        }
+
+        // Show controls on mouse move
+        document.querySelector('.player-container').addEventListener('mousemove', function() {
+            showControlsTemporarily();
+        });
+
+        // Toggle controls on click
+        document.querySelector('.player-container').addEventListener('click', function(e) {
+            // Don't toggle if clicking on controls directly
+            if (e.target.closest('.player-overlay') || e.target.closest('.player-top-controls')) {
+                return;
+            }
+            toggleControls();
+        });
+
+        // Keep controls visible when hovering over them
+        document.querySelector('.player-overlay').addEventListener('mouseenter', function() {
+            clearTimeout(controlsTimeout);
+        });
+
+        document.querySelector('.player-top-controls').addEventListener('mouseenter', function() {
+            clearTimeout(controlsTimeout);
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', function(e) {
+            // Only handle keys when player is focused or document has focus
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return; // Don't interfere with form inputs
+            }
+            
+            switch(e.key) {
+                case ' ':
+                case 'Spacebar':
+                    e.preventDefault();
+                    if (isPlaying) {
+                        player.pauseVideo();
+                    } else {
+                        player.playVideo();
+                    }
+                    showControlsTemporarily();
+                    break;
+                    
+                case 'f':
+                case 'F':
+                    e.preventDefault();
+                    const playerContainer = document.querySelector('.player-container');
+                    if (!isFullscreen) {
+                        if (playerContainer.requestFullscreen) {
+                            playerContainer.requestFullscreen();
+                        } else if (playerContainer.webkitRequestFullscreen) {
+                            playerContainer.webkitRequestFullscreen();
+                        } else if (playerContainer.msRequestFullscreen) {
+                            playerContainer.msRequestFullscreen();
+                        }
+                        isFullscreen = true;
+                    } else {
+                        if (document.exitFullscreen) {
+                            document.exitFullscreen();
+                        } else if (document.webkitExitFullscreen) {
+                            document.webkitExitFullscreen();
+                        } else if (document.msExitFullscreen) {
+                            document.msExitFullscreen();
+                        }
+                        isFullscreen = false;
+                    }
+                    showControlsTemporarily();
+                    break;
+                    
+                case 'm':
+                case 'M':
+                    e.preventDefault();
+                    if (isMuted) {
+                        player.unMute();
+                        document.getElementById('mute-unmute').innerHTML = '<i>🔊</i>';
+                        isMuted = false;
+                    } else {
+                        player.mute();
+                        document.getElementById('mute-unmute').innerHTML = '<i>🔇</i>';
+                        isMuted = true;
+                    }
+                    showControlsTemporarily();
+                    break;
+                    
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    const currentTime = player.getCurrentTime();
+                    player.seekTo(currentTime - 10, true);
+                    showControlsTemporarily();
+                    break;
+                    
+                case 'ArrowRight':
+                    e.preventDefault();
+                    const currentTime2 = player.getCurrentTime();
+                    player.seekTo(currentTime2 + 10, true);
+                    showControlsTemporarily();
+                    break;
+                    
+                case 'ArrowUp':
+                    e.preventDefault();
+                    if (currentVolume < 100) {
+                        currentVolume = Math.min(100, currentVolume + 10);
+                        document.getElementById('volume-slider').value = currentVolume;
+                        player.setVolume(currentVolume);
+                        if (isMuted && currentVolume > 0) {
+                            player.unMute();
+                            document.getElementById('mute-unmute').innerHTML = '<i>🔊</i>';
+                            isMuted = false;
+                        }
+                    }
+                    showControlsTemporarily();
+                    break;
+                    
+                case 'ArrowDown':
+                    e.preventDefault();
+                    if (currentVolume > 0) {
+                        currentVolume = Math.max(0, currentVolume - 10);
+                        document.getElementById('volume-slider').value = currentVolume;
+                        player.setVolume(currentVolume);
+                        if (currentVolume === 0) {
+                            player.mute();
+                            document.getElementById('mute-unmute').innerHTML = '<i>🔇</i>';
+                            isMuted = true;
+                        }
+                    }
+                    showControlsTemporarily();
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
