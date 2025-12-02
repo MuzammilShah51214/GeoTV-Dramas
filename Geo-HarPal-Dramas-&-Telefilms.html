@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full Screen Iframe with Bottom Menu</title>
+    <style>
+        /* CSS Code Start */
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #212121;
+        }
+
+        .iframe-container {
+            flex-grow: 1;
+            width: 100%;
+        }
+
+        #main-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 60px; /* Height reduced */
+            background-color: #1e1e1e;
+            color: #ffffff;
+            border-top: 1px solid #333;
+            flex-shrink: 0;
+            padding: 0 5px; /* Added padding to reduce edge spacing */
+         gap: 0; /* Remove gap between items */   
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: #ccc;
+            font-size: 10px;
+            padding: 2px 0; /* Reduced padding */
+            width: 25%;
+            /* Remove any margins that create extra space */
+            margin: 0;
+        }
+
+        /* Telefilms is currently active as per your input */
+        .nav-item.active {
+            color: #ffffff; 
+        }
+
+        /* ----------------------------------------------------- */
+        /* ICONS (General Styling) */
+        
+        /* Font Awesome Icons ka size (Home aur More ke liye) */
+        .nav-item i {
+            font-size: 26px; /* Size reduced */
+            margin-bottom: 1px; /* Reduced margin */
+        }
+
+        /* Custom Image Icon ka size aur styling (Dramas aur Telefilms ke liye) */
+        .nav-item img {
+            width: 60px; /* Size reduced */
+            height: 60px; /* Size reduced */
+            margin-bottom: 1px; /* Reduced margin */
+            /* Image ka color dark background ke liye halka karna */
+            filter: grayscale(100%) brightness(180%); 
+        }
+        
+        /* Active state mein Image Icon ka color bright karna */
+        .nav-item.active img {
+            filter: none;
+            filter: brightness(200%); 
+        }
+        /* ----------------------------------------------------- */
+        
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+    <div class="iframe-container">
+        <iframe 
+            id="main-iframe" 
+            src="https://rawcdn.githack.com/MuzammilShah51214/GeoTV-Dramas/fb0d03dd5ff56804c0dd51cbd7b136578ea14bff/Geo-harPal-Dramas.html" 
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+
+    <div class="bottom-nav">
+        
+        
+
+        <a href="#" class="nav-item" data-url="https://rawcdn.githack.com/MuzammilShah51214/GeoTV-Dramas/fb0d03dd5ff56804c0dd51cbd7b136578ea14bff/Geo-harPal-Dramas.html">
+            <img src="https://images.icon-icons.com/3923/PNG/512/movies_cinema_film_icon_250157.png" alt="Dramas Icon"> 
+            <span>Dramas</span>
+        </a>
+
+        <a href="#" class="nav-item active" data-url="https://rawcdn.githack.com/MuzammilShah51214/Geo-Har-Pal-Telefilms/affa42db1a9902ecb386a9ecaeedd1f74eca5631/GeoENT-TV-Telefilms.html">
+            <img src="https://images.icon-icons.com/3923/PNG/512/movies_cinema_film_icon_250157.png" alt="Telefilms Icon">
+            <span>Telefilms</span>
+        </a>
+
+        
+    </div>
+
+    <script>
+        const iframe = document.getElementById('main-iframe');
+        const navItems = document.querySelectorAll('.nav-item');
+
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+
+                navItems.forEach(i => i.classList.remove('active'));
+                
+                item.classList.add('active');
+
+                const url = item.getAttribute('data-url');
+                iframe.src = url;
+            });
+        });
+    </script>
+
+</body>
+</html>
