@@ -40,105 +40,8 @@
             padding: 0 20px;
         }
         
-        /* Loading Screen Styles */
-        #loadingScreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #ff1a75;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            transition: opacity 0.5s ease, visibility 0.5s ease;
-        }
-        
-        .loading-content {
-            text-align: center;
-            max-width: 500px;
-            padding: 20px;
-        }
-        
-        .loading-logo {
-            font-size: 3rem;
-            font-weight: bold;
-            color: #ffffff;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
-        }
-        
-        .loading-text {
-            font-size: 1.2rem;
-            margin-bottom: 30px;
-            color: var(--light);
-        }
-        
-        .loading-bar-container {
-            width: 100%;
-            height: 4px;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-        
-        .loading-bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            border-radius: 4px;
-            transition: width 0.3s ease;
-            animation: loadingPulse 2s infinite;
-        }
-        
-        @keyframes loadingPulse {
-            0% {
-                box-shadow: 0 0 5px var(--primary);
-            }
-            50% {
-                box-shadow: 0 0 15px var(--primary);
-            }
-            100% {
-                box-shadow: 0 0 5px var(--primary);
-            }
-        }
-        
-        .loading-dots {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 20px;
-        }
-        
-        .loading-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background-color: #ffffff;
-            animation: dotPulse 1.5s infinite ease-in-out;
-        }
-        
-        .loading-dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-        
-        .loading-dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-        
-        @keyframes dotPulse {
-            0%, 100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-            50% {
-                transform: scale(1.5);
-                opacity: 0.7;
-            }
-        }
+        /* Removed: Loading Screen Styles */
+        /* #loadingScreen, .loading-content, .loading-logo, .loading-text, .loading-bar-container, .loading-bar, @keyframes loadingPulse, .loading-dots, .loading-dot, @keyframes dotPulse, .offline-indicator CSS removed */
         
         .offline-indicator {
             display: none;
@@ -216,7 +119,6 @@
         .drama-card {
             background-color: var(--gray);
             border-radius: 15px;
-            height: 200px;
             overflow: hidden;
             transition: var(--transition);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
@@ -348,9 +250,7 @@
                 height: 250px;
             }
             
-            .loading-logo {
-                font-size: 2.5rem;
-            }
+            /* Removed: Loading Screen Responsive Styles */
         }
         
         @media (max-width: 480px) {
@@ -366,36 +266,11 @@
                 padding: 12px 45px 12px 15px;
             }
             
-            .loading-logo {
-                font-size: 2rem;
-            }
-            
-            .loading-text {
-                font-size: 1rem;
-            }
+            /* Removed: Loading Screen Responsive Styles */
         }
     </style>
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div id="loadingScreen">
-        <div class="loading-content">
-            <div class="loading-logo">Geo - ENT-TV Dramas</div>
-            <div class="loading-text">Loading your favorite dramas...</div>
-            <div class="loading-bar-container">
-                <div class="loading-bar" id="loadingBar"></div>
-            </div>
-            <div class="loading-dots">
-                <div class="loading-dot"></div>
-                <div class="loading-dot"></div>
-                <div class="loading-dot"></div>
-            </div>
-            <div class="offline-indicator" id="offlineIndicator">
-                You are currently offline. Content will load from cache.
-            </div>
-        </div>
-    </div>
-    
     <header>
         <div class="container">
             <div class="logo">Geo - ENT-TV Dramas</div>
@@ -408,8 +283,7 @@
     
     <main class="container">
         <div class="drama-grid" id="dramaGrid">
-            <!-- Drama cards will be populated by JavaScript -->
-        </div>
+            </div>
     </main>
     
     <footer>
@@ -647,7 +521,7 @@
                         </div>
                         <div class="drama-info">
                             <div class="drama-title">${drama.title}</div>
-                            <div class="drama-year">${drama.year}</div>
+                            <div class="drama-year">${drama.year || ''}</div>
                         </div>
                     `;
                 } else {
@@ -663,7 +537,7 @@
                         </a>
                         <div class="drama-info">
                             <div class="drama-title">${drama.title}</div>
-                            <div class="drama-year">${drama.year}</div>
+                            <div class="drama-year">${drama.year || ''}</div>
                         </div>
                     `;
                 }
@@ -681,40 +555,10 @@
             renderDramas(filteredDramas);
         }
 
-        // Loading screen functionality
-        function simulateLoading() {
-            const loadingScreen = document.getElementById('loadingScreen');
-            const loadingBar = document.getElementById('loadingBar');
-            const offlineIndicator = document.getElementById('offlineIndicator');
-            
-            // Check if the user is online
-            if (!navigator.onLine) {
-                offlineIndicator.style.display = 'block';
-            }
-            
-            // Simulate loading progress
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += Math.random() * 15;
-                if (progress >= 100) {
-                    progress = 100;
-                    clearInterval(interval);
-                    
-                    // Hide loading screen after a short delay
-                    setTimeout(() => {
-                        loadingScreen.style.opacity = '0';
-                        loadingScreen.style.visibility = 'hidden';
-                    }, 500);
-                }
-                loadingBar.style.width = `${progress}%`;
-            }, 300);
-        }
+        // Removed: Loading screen functionality (simulateLoading function removed)
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
-            // Start loading simulation
-            simulateLoading();
-            
             // Render all dramas initially
             renderDramas(dramas);
             
